@@ -1,6 +1,0 @@
- (define true-value?
-    (lambda (exp)
-      (cond ((eqv? exp 'true)#t)
-            ((eqv? exp 'false) #f)
-            ((= exp 0) #f)
-            (else #t))))
