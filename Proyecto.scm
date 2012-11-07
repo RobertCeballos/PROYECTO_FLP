@@ -1,7 +1,7 @@
 ;; The first three lines of this file were inserted by DrScheme. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
 #reader(lib "htdp-advanced-reader.ss" "lang")((modname Proyecto) (read-case-sensitive #t) (teachpacks ((lib "draw.ss" "teachpack" "htdp") (lib "gui.ss" "teachpack" "htdp"))) (htdp-settings #(#t constructor repeating-decimal #t #t none #f ((lib "draw.ss" "teachpack" "htdp") (lib "gui.ss" "teachpack" "htdp")))))
-;Juan David Ospina Vasquez 0835163
+;Juan David Ospina Vasquez 0835163  
 ;Carolina
 ;Roberto Ceballos
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
