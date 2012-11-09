@@ -1,6 +1,3 @@
-;; The first three lines of this file were inserted by DrScheme. They record metadata
-;; about the language level of this file in a form that our tools can easily process.
-#reader(lib "htdp-advanced-reader.ss" "lang")((modname Proyecto) (read-case-sensitive #t) (teachpacks ((lib "draw.ss" "teachpack" "htdp") (lib "gui.ss" "teachpack" "htdp"))) (htdp-settings #(#t constructor repeating-decimal #t #t none #f ((lib "draw.ss" "teachpack" "htdp") (lib "gui.ss" "teachpack" "htdp")))))
 ;Juan David Ospina Vasquez 0835163  
 ;Carolina
 ;Roberto Ceballos
@@ -23,7 +20,7 @@
 ;******************************************************************************************
 ;Especificación Léxica
 
-(define hola)
+
 
 (define scanner-spec-simple-interpreter
 '((white-sp(whitespace) skip)
@@ -156,12 +153,56 @@
 
 (define-datatype target target?
   (direct-target (expval expval?))
-  (indirect-target (ref ref-to-direct-target?)))
-
+  (indirect-target (ref ref-to-direct-target?))) 
+  
 (define-datatype reference reference?
   (a-ref (position integer?)
-         (vec vector?)))
+         (vec vector?))) 
 
+;**************************************************************************************
+;**************************************************************************************
+;Definición tipo de dato REGISTROS
+
+(define-datatype registro registro?
+  (reg-vacio (etiq symbol?))
+  (reg-datos (etiq symbol?)
+             (campos (list-of symbol?))
+             (vals vector?)))
+
+;;;;;;;;;   FUNCION: asignar un valor en un campo   ;;;;;;;;;;;;;;;;
+
+(define asignar-val-registro
+  (lambda (reg cam val)
+    (cases registro reg
+      (reg-vacio (etiq)
+                 (eopl:error 'asignar-val-registro
+                             "Error: este registro no contiene campos"
+                             val))
+      (reg-datos (etiq campos vals)
+                 (let ((pos (list-find-position list-find-position cam campos)))
+                   (if (number? pos)
+                       (if (eqv? (vector-ref vals pos) '_)
+                           (vector-set! vals pos val))
+                       (eopl:error 'asignar-val-registro
+                             "Error: este registro no contiene el campo dado" cam)))))))
+
+;;;;;;;;    FUNCION: consultar valor de un campo en un registro   ;;;;;;;;;
+
+(define consultar-val-registro
+  (lambda (reg cam)
+    (cases registro reg
+      (reg-vacio (etiq)
+                 (eopl:error 'asignar-val-registro
+                             "Error: este registro no contiene campos"
+                             val))
+      (reg-datos (etiq campos vals)
+                 (let ((pos (list-find-position list-find-position cam campos)))
+                   (if (number? pos)
+                       (vector-ref vals pos)
+                       (eopl:error 'asignar-val-registro
+                             "Error: este registro no contiene el campo dado" cam)))))))
+
+;**************************************************************************************
 ;**************************************************************************************
 
 (define eval-expression
