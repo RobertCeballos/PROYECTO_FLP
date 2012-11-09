@@ -28,7 +28,8 @@
   (variable ((or "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "Ñ" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z") 
                (arbno (or letter digit "?")) ) symbol)
   ;(atomo ((or "a" "b" "c" "ch" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "ñ" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z")))
-  
+  (identifier
+   (letter (arbno (or letter digit "?"))) symbol)
   (numberE(digit (arbno digit)) number)
   (negNumberE ("~" (arbno digit)) symbol)
   (numberF (digit (arbno digit) "." digit (arbno digit))number)
@@ -40,7 +41,7 @@
 
 (define grammar-simple-interpreter
   '(
-    (program (expression) a-program)
+    (program ("declare" expression) a-program)
     
     (cuerpo (expression (arbno expression)) cuerpoc)
     
@@ -61,6 +62,10 @@
     (expression (boolean) bool-exp)
     (boolean ("true") true-exp)
     (boolean ("false") false-exp)
+    
+    ;REGISTRO
+    ;(registro (identifier) reg-vacio)
+    (registro (identifier "(" (arbno identifier ":" expression) ")") reg-datos)
     
     ;NUMEROS
     (entero (numberE) posEntero)
