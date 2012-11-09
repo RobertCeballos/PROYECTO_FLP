@@ -12,7 +12,21 @@
 ;;
 ;;  <program>       ::= <expression>
 ;;                      <a-program (exp)>
-;;  <expression>    ::= 
+;;  <expression>    ::= <variable>
+;;  <variable>      ::= <upper-case-letter> (letter | <digit>)*
+;;                  ::= _ (<letter> | <digit>)*
+;;  <letter>        ::= <upper-case-letter> | <lower-case-letter>
+;;  <upper-case-letter> ::= A|B|C|D|E|F|G|H|I|J|K|L|M|N|Ñ|O|P|Q|R|S|T|U|V|W|X|Y|Z                
+;;  <lower-case-letter> ::= a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z  
+
+
+
+
+
+
+;;  <cuerpo>        ::= (<list-of-expression>)
+;;  <list-of-expressions>  ::= <expression> | <cuerpo>
+
 ;;  <primitive>     ::= 
 
 ;******************************************************************************************
