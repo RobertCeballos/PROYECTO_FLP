@@ -73,6 +73,14 @@
     (expression ( "{" expression (arbno expression) "}") app-exp)
     (expression ("set" variable "=" expression)set-exp)
     
+    ;CICLOS
+    (expression ("for" variable "in" expression ".." expression
+                       "do" cuerpo "end") for-exp)
+    (expression
+       (var-op variable) var-op-exp)
+    (expression
+       (var-op variable) var-op-exp)
+    (var-op ("..") plus1-op)
     
     ;BOOLEANOS
     (expression (boolean) bool-exp)
@@ -81,7 +89,7 @@
     
     ;REGISTRO
     ;(registro (identifier) reg-vacio)
-    (registro (identifier "(" (arbno identifier ":" expression) ")") reg-datos)
+    (registro (variable "(" (arbno variable ":" expression) ")") reg-datos)
     
     ;NUMEROS
     (entero (numberE) posEntero)
@@ -97,6 +105,8 @@
     (primitive ("-") sub-prim)
     (primitive ("*") mult-prim)
     (primitive ("/") div-prim)
+    
+    (var-op ("..") plus1-op)
     
     ;Comparacion
     (primitive ("<") menor-prim)
@@ -165,11 +175,24 @@
            (direct-target 10))
      (empty-env))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; definición del tipo de dato ambiente
+  (define-datatype environment environment?
+    (empty-env-record)
+    (extended-env-record (syms (list-of symbol?))
+                         (vec vector?)
+                         (env environment?)))
+
+
 
 ;eval-expression: <expression> <enviroment> -> numero
 ; evalua la expresión en el ambiente de entrada
 
 ;**************************************************************************************
+  
+  
+  
+  
 ;Definición tipos de datos referencia y blanco
 
 (define-datatype target target?
@@ -223,7 +246,24 @@
                        (eopl:error 'asignar-val-registro
                              "Error: este registro no contiene el campo dado" cam)))))))
 
-;**************************************************************************************
+;**************************************************************************************WORKING
+(define for-exp-aux
+    (lambda (ini fin body env)
+      (cond 
+        ((check-for ini fin)
+         (begin
+           (set! for-result  (eval-expression body env))
+           ;            (eopl:printf ("~s~%" for-result))
+           (eval-expression fin env)
+           (for-exp-aux ini fin body env)))
+        (else for-result))))
+
+(define check-for
+  (lambda (ini fin)
+    (if (= ini fin)#f
+        #t)))
+
+
 ;**************************************************************************************
 
 (define eval-expression
@@ -263,7 +303,23 @@
                   (apply-env-ref env id)
                   (eval-expression rhs-exp env))
                  1))
-      
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      (for-exp (var var-value stop-var body)
+               (let ((arg (eval-let-exp-rands (list var-value) env)))
+                 (for-exp-aux stop-cond
+                                var-change
+                                body
+                                (extend-env (list var) arg env))))
+      (var-op-exp (operator var)
+                    (let ((ref (apply-env-ref env var)))
+                      (begin
+                        (setref!
+                         ref
+                         (cases var-op operator
+                           (plus1-op () (+ (apply-env env var) 1))))
+                           (deref ref))))
+               
       (bool-exp (exp)
                 (cases boolean exp
                   (true-exp () #t)
