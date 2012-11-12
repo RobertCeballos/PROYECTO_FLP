@@ -248,14 +248,21 @@
 
 ;**************************************************************************************WORKING
 (define for-exp-aux
-    (lambda (ini fin body env)
+    (lambda (var fin ini body env)
+      (begin
+        (setref!
+         (apply-env-ref env var)
+         (eval-expression fin env))
+        1)
       (cond 
         ((check-for ini fin)
          (begin
            (set! for-result  (eval-expression body env))
            ;            (eopl:printf ("~s~%" for-result))
-           (eval-expression fin env)
-           (for-exp-aux ini fin body env)))
+           ;(eval-expression fin env)
+           
+           (apply-env-ref env var)
+           (for-exp-aux var (+ ini 1)fin body env)))
         (else for-result))))
 
 (define check-for
@@ -305,10 +312,12 @@
                  1))
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;          I     Ini       Fin
       (for-exp (var var-value stop-var body)
                (let ((arg (eval-let-exp-rands (list var-value) env)))
-                 (for-exp-aux stop-cond
-                                var-change
+                 (for-exp-aux  var
+                               stop-var
+                               var-value
                                 body
                                 (extend-env (list var) arg env))))
       (var-op-exp (operator var)
