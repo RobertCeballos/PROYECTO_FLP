@@ -190,14 +190,15 @@
           (let (( var-v (eval-expression var-val env)))
           (let (( var-s (eval-expression var-stop env)))
             
-                (let ((varv (car (get-valor var-v)))) 
-                (let ((vars (get-valor var-s)))
-        ;(for-exp-aux  (car var)
-         ;             varv 
-         ;             vars
-          ;            body
-           ;          (extend-env var arg env))
-                  (if (variable? var-v)(eopl:error 'apply-env "No binding for ~s" varv)))))))
+                (let ((varv (car (apply-store (get-serial var-v)))))
+                (let ((vars (car (apply-store (get-serial var-s)))))
+                  ;(if (number? varv)(eopl:error 'apply-env "Noooooo binding for ~s" vars))
+        (for-exp-aux  (car var)
+                      varv 
+                      vars
+                      body
+                     (extend-env var arg env))
+                  )))))
                            
       )))) 
       
@@ -210,9 +211,18 @@
 ;+{Y Y}
 ;end
 ;end
+(define get-serial
+  (lambda (var)
+    (cases variable var
+      (a-variable (serial valor) serial))))
 
+(define get-valor
+  (lambda (var)
+    (cases variable var
+      (a-variable (serial valor) valor))))
 
- 
+(define for-result 0) 
+
 (define for-exp-aux
     (lambda (var ini fin body env)
       (primitive-setref!
@@ -225,11 +235,9 @@
       (cond 
         ((check-for ini fin)
          (begin
-           (set! for-result  (eval-expression body env))
-           ;            (eopl:printf ("~s~%" for-result))
-           ;(eval-expression fin env)
+           (set! for-result  (eval-cuerpo body env))
            (let ((ref (apply-env-ref env var)))
-           
+            
            (for-exp-aux var (+ ini 1) fin body env))))
         (else for-result))))
 
