@@ -188,16 +188,18 @@
                     (length (vector-ref init-store 0)))))
                  
           (let (( var-v (eval-expression var-val env)))
-          (let (( var-s (eval-expression var-stop env)))     
-                (let ((varv (get-valor var-v)))
+          (let (( var-s (eval-expression var-stop env)))
+            
+                (let ((varv (car (get-valor var-v)))) 
                 (let ((vars (get-valor var-s)))
-        (for-exp-aux  var
-                      varv
-                      vars
-                      body
-                     (extend-env var arg env)))))))
+        ;(for-exp-aux  (car var)
+         ;             varv 
+         ;             vars
+          ;            body
+           ;          (extend-env var arg env))
+                  (if (variable? var-v)(eopl:error 'apply-env "No binding for ~s" varv)))))))
                            
-      ))))
+      )))) 
       
 ;;******************************************************************************************
 ;local {I F} in
