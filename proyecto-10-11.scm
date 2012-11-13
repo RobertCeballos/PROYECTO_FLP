@@ -37,6 +37,8 @@
     (expression ("local" "{" (arbno variable)"}" "in" cuerpo "end") local-exp)
     (expression (primitive "{" (arbno expression)"}") primapp-exp) 
     (expression ("set" expression "=" expression)set-exp)
+    (expression ("for" variable "in" variable ".." variable
+                       "do" cuerpo "end") for-exp)
     
     
     ;BOOLEANOS
@@ -112,6 +114,7 @@
       (print resultado)
       )))
 
+
 (define print
   (lambda (resultado)
     (if (number? resultado) (unparse resultado)
@@ -168,10 +171,51 @@
                    (let ((list-serials (asig-pos-env (length vars) (length (vector-ref init-store 0)))))
                      (save-in-store vars)
                      (eval-cuerpo body (extend-env  vars list-serials env)))))
+      
+      (for-exp (var var-val stop-var body)
+               (let ((arg (eval-let-exp-rands (list var-value) env)))
+      (let ((varv (get-valor (eval-expression var-val env)))
+            (vars (get-valor (eval-expression var-stop env))))
+        (for-exp-aux  var
+                      varv
+                      vars
+                      body
+                     (extend-env (list var) arg env)))))
+        
+        
+      
                    
       )))
       
 ;;******************************************************************************************
+
+(define for-exp-aux
+    (lambda (var ini fin body env)
+      (primitive-setref!
+       (apply-env-ref env var) ini)
+;      (begin
+;        (setref!
+;         (apply-env-ref env var)
+;         (eval-expression fin env))
+;        1)
+      (cond 
+        ((check-for ini fin)
+         (begin
+           (set! for-result  (eval-expression body env))
+           ;            (eopl:printf ("~s~%" for-result))
+           ;(eval-expression fin env)
+           (let ((ref (apply-env-ref env var)))
+           
+           (for-exp-aux var (+ ini 1) fin body env))))
+        (else for-result))))
+
+(define check-for
+  (lambda (ini fin)
+    (if (= ini fin)#f
+        #t)))
+
+
+;*******************************************************
 ;FUNCIONES AUXILIARES eval-expression
 
 (define eval-cuerpo
@@ -223,9 +267,7 @@
        
        ))))
 
-       
-         
-
+      
 ;Asignar una variable a un numero
 (define asig-var-num
   (lambda (var1 var2 env)
@@ -500,4 +542,4 @@
     (if (= n 0) (cons elemento (cdr lista))
         (cons (car lista) (setElement (cdr lista) (- n 1) elemento)))))
 
-;******************************************************************************************
+;**************************************************************
