@@ -37,7 +37,7 @@
     (expression ("local" "{" (arbno variable)"}" "in" cuerpo "end") local-exp)
     (expression (primitive "{" (arbno expression)"}") primapp-exp) 
     (expression ("set" expression "=" expression)set-exp)
-    (expression ("for" variable "in" variable ".." variable
+    (expression ("for" (arbno variable) "in" expression ".." expression
                        "do" cuerpo "end") for-exp)
     
     
@@ -172,23 +172,35 @@
                      (save-in-store vars)
                      (eval-cuerpo body (extend-env  vars list-serials env)))))
       
-      (for-exp (var var-val stop-var body)
-               (let ((arg (eval-let-exp-rands (list var-value) env)))
-      (let ((varv (get-valor (eval-expression var-val env)))
-            (vars (get-valor (eval-expression var-stop env))))
+      (for-exp (var var-val var-stop body)
+               (let ((arg (asig-pos-env (length var) 
+                    (length (vector-ref init-store 0)))))
+                 
+          (let (( var-v (eval-expression var-val env)))
+          (let (( var-s (eval-expression var-stop env)))     
+                (let ((varv (get-valor var-v)))
+                (let ((vars (get-valor var-s)))
         (for-exp-aux  var
                       varv
                       vars
                       body
-                     (extend-env (list var) arg env)))))
-        
-        
-      
-                   
-      )))
+                     (extend-env var arg env)))))))
+                           
+      ))))
       
 ;;******************************************************************************************
+(define apply-env-ref
+    (lambda (env sym)
+      (cases environment env
+        (empty-env-record ()
+                          (eopl:error 'apply-env "No binding for ~s" sym))
+        (extended-env-record (syms vec old-env)
+                             (let ((pos (list-find-position sym syms)))
+                               (if (number? pos)
+                                   (a-ref pos vec)
+                                   (apply-env-ref old-env sym)))))))
 
+ 
 (define for-exp-aux
     (lambda (var ini fin body env)
       (primitive-setref!
@@ -213,6 +225,17 @@
   (lambda (ini fin)
     (if (= ini fin)#f
         #t)))
+
+(define-datatype reference reference?
+    (a-ref (position integer?)
+           (vector vector?)))
+
+
+(define primitive-setref!
+    (lambda (ref value)
+      (cases reference ref
+        (a-ref (pos vec) (vector-set! vec pos value)))))
+
 
 
 ;*******************************************************
@@ -442,6 +465,17 @@
    (syms (list-of symbol?))
    (vec vector?)
    (env environment?)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define-datatype target target?
+    (direct-target (expval expval?))
+    (indirect-target (ref ref-to-direct-target?)))
+
+(define expval?
+    (lambda (x)
+      (or (number? x) (procval? x) (boolean? x) (list? x) (symbol? x))))
+
+
 
 (define scheme-value? (lambda (v) #t))
 
