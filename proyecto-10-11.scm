@@ -138,6 +138,17 @@
     (vector-set! store 0 (list A B C))
     store
     ))
+
+;*******************************************************************************************
+;****************************************AMBIENTES******************************************
+
+;definición del tipo de dato ambiente
+(define-datatype environment environment?
+  (empty-env-record)
+  (extended-env-record
+   (syms (list-of symbol?))
+   (vec vector?)
+   (env environment?)))
     
 
 ;**************************************************************************************
@@ -189,16 +200,15 @@
       ))))
       
 ;;******************************************************************************************
-(define apply-env-ref
-    (lambda (env sym)
-      (cases environment env
-        (empty-env-record ()
-                          (eopl:error 'apply-env "No binding for ~s" sym))
-        (extended-env-record (syms vec old-env)
-                             (let ((pos (list-find-position sym syms)))
-                               (if (number? pos)
-                                   (a-ref pos vec)
-                                   (apply-env-ref old-env sym)))))))
+;local {I F} in
+;set I =1
+;set F =9
+;for Y in I .. F do
+;+{2 2}
+;+{Y Y}
+;end
+;end
+
 
  
 (define for-exp-aux
@@ -235,6 +245,17 @@
     (lambda (ref value)
       (cases reference ref
         (a-ref (pos vec) (vector-set! vec pos value)))))
+
+(define apply-env-ref
+    (lambda (env sym)
+      (cases environment env
+        (empty-env-record ()
+                          (eopl:error 'apply-env "No binding for ~s" sym))
+        (extended-env-record (syms vec old-env)
+                             (let ((pos (list-find-position sym syms)))
+                               (if (number? pos)
+                                   (a-ref pos vec)
+                                   (apply-env-ref old-env sym)))))))
 
 
 
@@ -455,16 +476,7 @@
       (closure (ids body env)
                (eval-expression body (extend-env ids args env))))))
 
-;*******************************************************************************************
-;****************************************AMBIENTES******************************************
 
-;definición del tipo de dato ambiente
-(define-datatype environment environment?
-  (empty-env-record)
-  (extended-env-record
-   (syms (list-of symbol?))
-   (vec vector?)
-   (env environment?)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define-datatype target target?
