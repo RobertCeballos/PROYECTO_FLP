@@ -193,6 +193,7 @@
             
                 (let ((varv (car (apply-store (get-serial var-v)))))
                 (let ((vars (car (apply-store (get-serial var-s)))))
+                  (update-store varv)
 ;                  (if (number? varv)(eopl:error 'apply-env "Noooooo binding for ~s" (car arg)))
         (for-exp-aux  (car var)
                       varv 
@@ -241,7 +242,7 @@
            (set! for-result  (eval-cuerpo body env))
            (let ((ref (apply-env-ref env var)))
             
-           (for-exp-aux var (+ ini 1) fin body env))))
+           (for-exp-aux var (+ ini 1) fin body env arg))))
         (else for-result))))
 
 (define check-for
