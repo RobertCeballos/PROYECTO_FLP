@@ -246,7 +246,7 @@
 
 (define check-for
   (lambda (ini fin)
-    (if (= ini fin)#f
+    (if (> ini fin)#f
         #t)))
 
 (define-datatype reference reference?

@@ -57,3 +57,12 @@ set 3.2 = Y
 set Z=*{X Y}
 Z
 end
+
+local {I F}
+ in
+  set I =1
+  set F =9
+ for Y in I .. F do
+  +{Y Y}
+ end
+end
