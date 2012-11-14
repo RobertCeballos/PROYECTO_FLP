@@ -186,21 +186,23 @@
       (for-exp (var var-val var-stop body)
                (let ((arg (asig-pos-env (length var) 
                     (length (vector-ref init-store 0)))))
+;                 (if (number? arg)(eopl:error 'apply-env "Noooooo binding for ~s" arg))
                  
           (let (( var-v (eval-expression var-val env)))
           (let (( var-s (eval-expression var-stop env)))
             
                 (let ((varv (car (apply-store (get-serial var-v)))))
                 (let ((vars (car (apply-store (get-serial var-s)))))
-                  ;(if (number? varv)(eopl:error 'apply-env "Noooooo binding for ~s" vars))
+;                  (if (number? varv)(eopl:error 'apply-env "Noooooo binding for ~s" (car arg)))
         (for-exp-aux  (car var)
                       varv 
                       vars
                       body
-                     (extend-env var arg env))
-                  )))))
+                     (extend-env var arg env)
+                     (car arg))
+                  ))))))
                            
-      )))) 
+      ))) 
       
 ;;******************************************************************************************
 ;local {I F} in
@@ -220,13 +222,14 @@
   (lambda (var)
     (cases variable var
       (a-variable (serial valor) valor))))
-
+ 
 (define for-result 0) 
 
 (define for-exp-aux
-    (lambda (var ini fin body env)
+    (lambda (var ini fin body env arg)
       (primitive-setref!
        (apply-env-ref env var) ini)
+      (set-store arg ini)
 ;      (begin
 ;        (setref!
 ;         (apply-env-ref env var)
@@ -281,7 +284,7 @@
                      (eval-expression primero env)
                      (eval-cuerpo (cuerpoc (car resto) (cdr resto)) env)))))))
            
-
+ 
 
 ;Funcion que aplica update-store por cada variable
 (define save-in-store
@@ -559,7 +562,7 @@
 
 (define aux-apply-store 
   (lambda(serial lista)
-    (if (null? lista) (eopl:error 'apply-store "Posicion no encontrada")
+    (if (null? lista) (eopl:error 'apply-store "Posicion no encontrada" serial)
       (if (variable? (car lista))
           (cases variable (car lista)
             (a-variable (serialE valor)
@@ -595,6 +598,7 @@
 ;cambia el elemento de una lista de acuerdo con su posicion (n)
 (define setElement 
   (lambda (lista n elemento)
+;    (if (= n 5)(eopl:error 'setElement "Varible ~s ya derminada" n))
     (if (= n 0) (cons elemento (cdr lista))
         (cons (car lista) (setElement (cdr lista) (- n 1) elemento)))))
 
