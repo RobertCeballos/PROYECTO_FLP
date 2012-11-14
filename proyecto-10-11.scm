@@ -193,13 +193,13 @@
             
                 (let ((varv (car (apply-store (get-serial var-v)))))
                 (let ((vars (car (apply-store (get-serial var-s)))))
-                  (update-store varv)
-;                  (if (number? varv)(eopl:error 'apply-env "Noooooo binding for ~s" (car arg)))
+                  (update-store var-v)
+            ;      (if (variable? var-v)(eopl:error 'apply-env "Noooooo binding for ~s" var-v))
         (for-exp-aux  (car var)
                       varv 
-                      vars
+                      vars 
                       body
-                     (extend-env var arg env)
+                     (extend-env var arg env) 
                      (car arg))
                   ))))))
                            
@@ -210,7 +210,6 @@
 ;set I =1
 ;set F =9
 ;for Y in I .. F do
-;+{2 2}
 ;+{Y Y}
 ;end
 ;end
@@ -229,7 +228,7 @@
 (define for-exp-aux
     (lambda (var ini fin body env arg)
       (primitive-setref!
-       (apply-env-ref env var) ini)
+       (apply-env-ref env var) arg)
       (set-store arg ini)
 ;      (begin
 ;        (setref!
