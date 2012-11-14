@@ -40,6 +40,8 @@
     (expression ("for" (arbno variable) "in" expression ".." expression
                        "do" cuerpo "end") for-exp)
     
+    (expression ("[" (arbno expression) "]")list-exp)
+    
     
     ;BOOLEANOS
     (expression (boolean) bool-exp)
@@ -59,6 +61,9 @@
     (primitive (">") mayor-prim)
     (primitive (">=") mayig-prim)
     (primitive ("==") igual-prim)
+    
+    ;Celdas
+    (primitive ("newcell") newcell-prim)
     
     ;Logicas
     (primitive ("orelse") orelse-prim)
@@ -154,7 +159,7 @@
 ;**************************************************************************************
 ;;************************************Expresiones************************************
 ;eval-expression
-(define eval-expression
+(define eval-expression 
   (lambda (exp env)
     (cases expression exp
       
@@ -165,11 +170,14 @@
       (var-exp (id) (let ((serial (apply-env env id)))
                      (create-var serial id)))
       
+      (list-exp (exps)
+                ())
+      
       (primapp-exp (prim rands)
                    (let ((args (eval-primapp-exp-rands rands env)))
                      (apply-primitive prim args)))
       
-      (set-exp (vars exp) vars 
+      (set-exp (vars exp)  
                (asignar vars exp env)) 
                    
       (bool-exp (exp)
@@ -370,7 +378,7 @@
 ;****************************************PRIMITIVAS***************************************
 
 ;apply-primitive: <primitiva> <list-of-expression> -> numero
-
+ 
 (define apply-primitive
   (lambda (prim args)
         (cases primitive prim
@@ -403,6 +411,7 @@
           (isfree-prim() (isFree?(get-serial(car args))))
           (isdet-prim() (not(isFree?(get-serial(car args)))))
    
+          (newcell-prim() )
       )))
 
 ;******************************************************************************************
