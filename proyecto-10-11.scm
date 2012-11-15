@@ -156,6 +156,13 @@
    (syms (list-of symbol?))
    (vec vector?)
    (env environment?)))
+
+
+;**********************************CELDAS********************************************
+
+ (define-datatype celda celda?
+       (a-cell (val number?)
+               (lis list?))) 
     
 
 ;**************************************************************************************
@@ -180,8 +187,8 @@
                      (apply-primitive prim args)))
       
       (primcell-exp (prim val)
-                    (let ((arg (eval-primapp-exp-rands val env)))
-                      (apply-primitive prim arg)))
+                    (let ((arg (to-number val)))
+                       (create-cell (length (vector-ref init-store 0)) arg )))
       
       (set-exp (vars exp)  
                (asignar vars exp env)) 
@@ -208,7 +215,7 @@
                 (let ((varv (car (apply-store (get-serial var-v)))))
                 (let ((vars (car (apply-store (get-serial var-s)))))
                   (update-store var-v)
-            ;      (if (variable? var-v)(eopl:error 'apply-env "Noooooo binding for ~s" var-v))
+                 (if (variable? var-v)(eopl:error 'apply-env "Noooooo binding for ~s" var-v))
         (for-exp-aux  (car var)
                       varv 
                       vars 
@@ -232,10 +239,20 @@
     (cases variable var
       (a-variable (serial valor) serial))))
 
+(define get-serial-cell
+  (lambda (var)
+    (cases celda var
+      (a-cell (serial valor) serial))))
+
 (define get-valor
   (lambda (var)
     (cases variable var
       (a-variable (serial valor) valor))))
+
+    (define get-valor-cell
+     (lambda (var)
+        (cases celda var
+         (a-cell (serial valor) serial))))
  
 (define for-result 0) 
 
@@ -314,17 +331,25 @@
 (define asig-pos-env
   (lambda (cant posF)
     (if (equal? posF (+(length (vector-ref init-store 0)) cant)) ()
-        (cons  posF  (asig-pos-env cant (+ posF 1))))))
+        (cons  posF  (asig-pos-env cant (+ posF 1)))))) 
 
 ;Funcion que de acuerdo al tipo de elemento realiza una asignacion
 (define asignar
   (lambda (var1 var2 env)
+     (if (or (celda? (eval-expression var1 env))(celda? (eval-expression var2 env)))
+        (asig-var-cel var1 var2 env)
     (if (and (variable? (eval-expression var1 env)) (variable? (eval-expression var2 env)))(asig-var-var var1 var2 env)
         (if (or(number? (eval-expression var1 env)) (number? (eval-expression var2 env))) (asig-var-num var1 var2 env)
             (if (or (expression? var1) (expression? var1))
                     (if(expression? var1)
                        (asig-var-num (eval-expression var1) var2)
-                       (asig-var-num var1 (eval-expression var2))))))))
+                       (asig-var-num var1 (eval-expression var2)))))))))
+
+(define asig-var-cel
+  (lambda(var1 var2 env)
+    (let ((var1 (eval-expression var1 env)))
+      (if (isfree? (get-serial var1))
+          (apply-env-env env(car (get-valor var1)) (get-serial var2)))))) 
         
 ;Asignar una variable a otra variable
 (define asig-var-var
@@ -420,15 +445,11 @@
           (isfree-prim() (isFree?(get-serial(car args))))
           (isdet-prim() (not(isFree?(get-serial(car args)))))
    
-          (newcell-prim() (let ((args (to-number args)))
-                            (create-cell args args 
-                            )))
-                            
+          (newcell-prim())
+                                                      
       )))
 ;;****************************************************
-    (define-datatype celda celda?
-       (a-cell (val number?)
-               (lis list?))) 
+   
     
     (define create-cell
      (lambda (serial valor)
