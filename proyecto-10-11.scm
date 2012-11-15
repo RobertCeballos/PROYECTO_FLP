@@ -35,7 +35,9 @@
     (expression (entero) entero-exp)
     (expression (flotante) flotante-exp)
     (expression ("local" "{" (arbno variable)"}" "in" cuerpo "end") local-exp)
-    (expression (primitive "{" (arbno expression)"}") primapp-exp) 
+    (expression (primitive "{" (arbno expression)"}") primapp-exp)
+    (expression ( "{" primitive (arbno expression)"}")
+                primcell-exp)
     (expression ("set" expression "=" expression)set-exp)
     (expression ("for" (arbno variable) "in" expression ".." expression
                        "do" cuerpo "end") for-exp)
@@ -177,6 +179,10 @@
                    (let ((args (eval-primapp-exp-rands rands env)))
                      (apply-primitive prim args)))
       
+      (primcell-exp (prim val)
+                    (let ((arg (eval-primapp-exp-rands val env)))
+                      (apply-primitive prim arg)))
+      
       (set-exp (vars exp)  
                (asignar vars exp env)) 
                    
@@ -233,10 +239,11 @@
  
 (define for-result 0) 
 
+;;;FUNCION aUXILIaR DE (FOR) REaLIZa LaS ITERaCIONES
 (define for-exp-aux
     (lambda (var ini fin body env arg)
-      (primitive-setref!
-       (apply-env-ref env var) arg)
+;      (primitive-setref!
+;       (apply-env-ref env var) arg)
       (set-store arg ini)
 ;      (begin
 ;        (setref!
@@ -252,6 +259,7 @@
            (for-exp-aux var (+ ini 1) fin body env arg))))
         (else for-result))))
 
+;;; CHEKEa La CONDICION DE PaRaDa DEL (FOR)
 (define check-for
   (lambda (ini fin)
     (if (> ini fin)#f
@@ -261,12 +269,13 @@
     (a-ref (position integer?)
            (vector vector?)))
 
-
+;;; aSIGNa UN VaLOR a UNa REFERENCIa
 (define primitive-setref!
     (lambda (ref value)
       (cases reference ref
         (a-ref (pos vec) (vector-set! vec pos value)))))
 
+;;;CREa UNa REFERENCIa DE UN VaLOR EN EL aMBIENTE
 (define apply-env-ref
     (lambda (env sym)
       (cases environment env
@@ -411,9 +420,20 @@
           (isfree-prim() (isFree?(get-serial(car args))))
           (isdet-prim() (not(isFree?(get-serial(car args)))))
    
-          (newcell-prim() )
+          (newcell-prim() (let ((args (to-number args)))
+                            (create-cell args args 
+                            )))
+                            
       )))
-
+;;****************************************************
+    (define-datatype celda celda?
+       (a-cell (val number?)
+               (lis list?))) 
+    
+    (define create-cell
+     (lambda (serial valor)
+       (a-cell serial (list valor))))
+    
 ;******************************************************************************************
 ;FUNCIONES AUX APPLY PRIMITIVE
 ;Funcion que opera un conjunto de numeros dependiendo del signo
