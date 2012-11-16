@@ -35,12 +35,20 @@
     (cuerpo (expression (arbno expression)) cuerpoc)
     (expression (variable) var-exp)
     (expression (entero) entero-exp)
+    
     (expression (flotante) flotante-exp)
+    
     (expression ("local" "{" (arbno variable)"}" "in" cuerpo "end") local-exp)
+    
     (expression (primitive "{" (arbno expression)"}") primapp-exp)
+    
     (expression ( "{" primitive (arbno expression)"}")
                 primcell-exp)
+    
+   ; (expression ( primitive expression) check-cell)
+    
     (expression ("set" expression "=" expression)set-exp)
+    
     (expression ("for" (arbno variable) "in" expression ".." expression
                        "do" cuerpo "end") for-exp)
     
@@ -68,6 +76,7 @@
     
     ;Celdas
     (primitive ("newcell") newcell-prim)
+    (primitive ("@") valcell-prim)
     
     ;Logicas
     (primitive ("orelse") orelse-prim)
@@ -190,7 +199,13 @@
       
       (primcell-exp (prim val)
                     (let ((arg (to-number val)))
-                       (create-cell (length (vector-ref init-store 0)) arg )))
+                      (apply-primitive prim arg)))
+                       
+      
+;      (check-cell (prim exp)
+;                  (let ((cel (eval-expression exp env)))
+;                    (apply-primitive prim cel)))
+                    
       
       (set-exp (vars exp)  
                (asignar vars exp env)) 
@@ -340,6 +355,7 @@
   (lambda (var1 var2 env)
      (if (or (celda? (eval-expression var1 env))(celda? (eval-expression var2 env)))
         (asig-var-cel var1 var2 env)
+        ;;terminar condicionnnn
     (if (and (variable? (eval-expression var1 env)) (variable? (eval-expression var2 env)))(asig-var-var var1 var2 env)
         (if (or(number? (eval-expression var1 env)) (number? (eval-expression var2 env))) (asig-var-num var1 var2 env)
             (if (or (expression? var1) (expression? var1))
@@ -347,12 +363,16 @@
                        (asig-var-num (eval-expression var1) var2)
                        (asig-var-num var1 (eval-expression var2)))))))))
 
+    ;Asignar una variable a una celda
 (define asig-var-cel
   (lambda(var1 var2 env)
     (let ((var1 (eval-expression var1 env))
           (var2 (eval-expression var2 env)))
       (if (isFree? (get-serial var1))
-          (apply-env-env env(car (get-valor var1)) (get-serial-cell var2)))))) 
+          (if (celda? var2)
+              (eopl:error 'asig-var "Alguna de las variables ya esta determinada"  var1))))))
+;          (set-store-cell (get-serial var1) var2)))
+;          (apply-env-env env(car (get-valor var1)) (get-serial-cell var2))))) 
         
 ;Asignar una variable a otra variable
 (define asig-var-var
@@ -448,7 +468,12 @@
           (isfree-prim() (isFree?(get-serial(car args))))
           (isdet-prim() (not(isFree?(get-serial(car args)))))
    
-          (newcell-prim())
+          (newcell-prim()(create-cell (length (vector-ref init-store 0)) args ))
+          
+          (valcell-prim() 
+                       (if (variable? (car args))
+                              (eopl:error 'apply-primitive "Error: Cantidad de operandos incorrecta" (car args))))
+                             ; (get-valor-cell arg)))
                                                       
       )))
 ;;****************************************************
@@ -606,6 +631,10 @@
 (define set-store
   (lambda (pos val)
     (vector-set! init-store 0 (setElement (vector-ref init-store 0) pos (create-var pos val)))))
+
+(define set-store-cell
+  (lambda (pos val)
+    (vector-set! init-store 0 (setElement (vector-ref init-store 0) pos val))))
                
 
 ;Funcion que busca un serial ene el store y devuelve su valor asociado
