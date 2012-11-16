@@ -215,7 +215,7 @@
                 (let ((varv (car (apply-store (get-serial var-v)))))
                 (let ((vars (car (apply-store (get-serial var-s)))))
                   (update-store var-v)
-                 (if (variable? var-v)(eopl:error 'apply-env "Noooooo binding for ~s" var-v))
+                 (if (variable? var-v)(eopl:error 'apply-env "Noooooo binding for ~s" (car (get-valor var-v))))
         (for-exp-aux  (car var)
                       varv 
                       vars 
@@ -347,9 +347,10 @@
 
 (define asig-var-cel
   (lambda(var1 var2 env)
-    (let ((var1 (eval-expression var1 env)))
-      (if (isfree? (get-serial var1))
-          (apply-env-env env(car (get-valor var1)) (get-serial var2)))))) 
+    (let ((var1 (eval-expression var1 env))
+          (var2 (eval-expression var2 env)))
+      (if (isFree? (get-serial var1))
+          (apply-env-env env(car (get-valor var1)) (get-serial-cell var2)))))) 
         
 ;Asignar una variable a otra variable
 (define asig-var-var
