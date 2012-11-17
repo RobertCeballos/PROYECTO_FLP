@@ -18,6 +18,10 @@
   (comment("%" (arbno (not #\newline))) skip)
   (variable ((or "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "Ñ" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z") 
                (arbno (or letter digit "?")) ) symbol)
+  (atomo  ((or "a" "b" "c" "ch" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "ñ" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" )
+          (arbno  (or letter digit ) ))symbol)
+          ;( (arbno "'" letter "'") )) ) symbol)
+          
   
   (entero (digit (arbno digit)) string)
   (entero ("~" (arbno digit)) string)
@@ -53,6 +57,8 @@
                        "do" cuerpo "end") for-exp)
     
     (expression ("[" (arbno expression) "]")list-exp)
+    
+    (expression (atomo "(" (arbno atomo ":" expression) ")") record-exp)
     
     
     ;BOOLEANOS
@@ -129,7 +135,7 @@
            (cases program pgm
              (a-program (body)
                         (eval-expression body (init-env))))))
-      (print resultado)
+       (print resultado)
       )))
 
 
@@ -171,11 +177,21 @@
 
 ;**********************************CELDAS********************************************
 
+;definición del tipo de dato celda
  (define-datatype celda celda?
        (a-cell (val number?)
                (lis list?))) 
-    
+ 
+ 
+;**********************************REGISTROS*****************************************
+ ;Definición tipo de dato REGISTRO
+(define-datatype registro registro?
+  (reg-vacio (etiq symbol?))
+  (reg-datos (etiq symbol?)
+             (campos (list-of symbol?))
+             (vals vector?)))
 
+ 
 ;**************************************************************************************
 ;;************************************Expresiones************************************
 ;eval-expression
@@ -205,6 +221,8 @@
 ;      (check-cell (prim exp)
 ;                  (let ((cel (eval-expression exp env)))
 ;                    (apply-primitive prim cel)))
+      
+      (record-exp (etiq camp vals) vals)
                     
       
       (set-exp (vars exp)  
@@ -323,7 +341,7 @@
 
 
 
-;*******************************************************
+;*******************************************************************************************************
 ;FUNCIONES AUXILIARES eval-expression
 
 (define eval-cuerpo
@@ -356,6 +374,7 @@
      (if (or (celda? (eval-expression var1 env))(celda? (eval-expression var2 env)))
         (asig-var-cel var1 var2 env)
         ;;terminar condicionnnn
+       
     (if (and (variable? (eval-expression var1 env)) (variable? (eval-expression var2 env)))(asig-var-var var1 var2 env)
         (if (or(number? (eval-expression var1 env)) (number? (eval-expression var2 env))) (asig-var-num var1 var2 env)
             (if (or (expression? var1) (expression? var1))
@@ -439,21 +458,26 @@
 (define apply-primitive
   (lambda (prim args)
         (cases primitive prim
-          (sum-prim () (let((args (to-number args)))
-                         (if (null? (cdr args)) (eopl:error 'apply-primitive "Error: Minimo requiere dos operandos")
-                             (operar + args 0))))
+            (sum-prim () (let((args (to-number args)))
+                           (if (equal?  (verificarTipoNumero (car args) (cdr args)) #f) (eopl:error 'apply-primitive "Error: Numeros de diferente tipo")
+                               (if (null? (cdr args)) (eopl:error 'apply-primitive "Error: Minimo requiere dos operandos")
+                                   (operar + args 0))
+                               )))
       
           (sub-prim () (let((args (to-number args)))
-                         (if (or (null? (cdr args))(not (null? (caddr args)))) (eopl:error 'apply-primitive "Error: Cantidad de operandos incorrecta")
-                             (- (car args) (cadr args)))))
+                         (if (equal?  (verificarTipoNumero (car args) (cdr args)) #f) (eopl:error 'apply-primitive "Error: Numeros de diferente tipo")
+                           (if (null? (cdr args)) (eopl:error 'apply-primitive "Error: Cantidad de operandos incorrecta")
+                               (- (car args) (cadr args))))))
           
           (mult-prim () (let((args (to-number args)))
+                          (if (equal?  (verificarTipoNumero (car args) (cdr args)) #f) (eopl:error 'apply-primitive "Error: Numeros de diferente tipo")
                           (if (null? (cdr args))  (eopl:error 'apply-primitive "Error Cantidad de operandos incorrecta")
-                                 (operar * args 1))))
+                                 (operar * args 1)))))
           
           (div-prim ()  (let((args (to-number  args)))
+                          (if (equal?  (verificarTipoNumero (car args) (cdr args)) #f) (eopl:error 'apply-primitive "Error: Numeros de diferente tipo")
                           (if (= 0 (cadr args)) (eopl:error 'apply-primitive "Error Division por 0")
-                                 (/ (car args) (cadr args)))))
+                                 (/ (car args) (cadr args))))))
           
           (menor-prim() (let((args (to-number  args))) (< (car args) (cadr args))))
           (meneq-prim() (let((args (to-number  args))) (<= (car args) (cadr args))))
@@ -476,15 +500,10 @@
                              ; (get-valor-cell arg)))
                                                       
       )))
-;;****************************************************
-   
+
     
-    (define create-cell
-     (lambda (serial valor)
-       (a-cell serial (list valor))))
-    
-;******************************************************************************************
-;FUNCIONES AUX APPLY PRIMITIVE
+;*******************************************************************************************
+ ;***************************FUNCIONES AUX APPLY PRIMITIVE***********************************
 ;Funcion que opera un conjunto de numeros dependiendo del signo
 (define operar
      (lambda (pred lista n)
@@ -517,12 +536,14 @@
         dato)))
 
 
-(define verificarTipoNumero
-  (lambda  (primero lista)
-    (if (null? lista) #t
-    (if (and (= (- primero (truncate primero))0) (=(- (car lista) (truncate (car lista)) )0))(verificarTipoNumero primero (cdr lista))  ;si es = a cero es entero
-      (if (and (not(= (- primero (truncate primero))0)) (not(=(- (car lista) (truncate (car lista)) )0))) (verificarTipoNumero primero (cdr lista))
-           #f)))))
+
+;Cambio en verificar tipo numero, uso de funcion exact de schme, si retorna #t es pq todos los numeros son del mismo tipo
+(define verificarTipoNumero 
+  (lambda(primero resto)
+    (if (null? resto) #t
+        (if (and (exact? primero) (exact? (car resto))) (verificarTipoNumero primero (cdr resto))
+            (if (and (not(exact? primero)) (not(exact? (car resto)))) (verificarTipoNumero primero (cdr resto))
+                #f)))))
   
 
 ;funcion que transforma todos los valores d una lista a numeros ya que en apply-primitive es posible hacer +{X Y} donde X y Y son variables
@@ -582,6 +603,9 @@
 
 (define scheme-value? (lambda (v) #t))
 
+
+;*******************************************************************************************
+;**********************************FUNCIONES AMBIENTES**************************************
 ;empty-env:      -> enviroment
 ;función que crea un ambiente vacío
 (define empty-env  
@@ -621,7 +645,7 @@
   
   
 ;*******************************************************************************************
-;****************************************STORE******************************************
+;**********************************FUNCIONES STORE******************************************
 ;funcion que actualiza un store, agregando un valor al final  
 (define update-store
   (lambda (valor)
@@ -651,6 +675,50 @@
                         (if (equal? serialE serial) 
                             valor
                             (aux-apply-store serial (cdr lista)))))))))
+
+
+;*******************************************************************************************
+;**********************************FUNCIONES REGISTROS**************************************
+
+;FUNCION: asignar un valor en un campo 
+(define asignar-val-registro
+  (lambda (reg cam val)
+    (cases registro reg
+      (reg-vacio (etiq)
+                 (eopl:error 'asignar-val-registro
+                             "Error: este registro no contiene campos"
+                             val))
+      (reg-datos (etiq campos vals)
+                 (let ((pos (list-find-position cam campos)))
+                   (if (number? pos)
+                       (if (eqv? (vector-ref vals pos) '_)
+                           (vector-set! vals pos val))
+                       (eopl:error 'asignar-val-registro
+                             "Error: este registro no contiene el campo dado" cam)))))))
+
+;FUNCION: consultar valor de un campo en un registro
+(define consultar-val-registro
+  (lambda (reg cam)
+    (cases registro reg
+      (reg-vacio (etiq)
+                 (eopl:error 'asignar-val-registro
+                             "Error: este registro no contiene campos"
+                             val))
+      (reg-datos (etiq campos vals)
+                 (let ((pos (list-find-position cam campos)))
+                   (if (number? pos)
+                       (vector-ref vals pos)
+                       (eopl:error 'asignar-val-registro
+                             "Error: este registro no contiene el campo dado" cam)))))))
+ 
+
+;*******************************************************************************************
+;**********************************FUNCIONES CELDAS**************************************
+(define create-cell
+  (lambda (serial valor)
+    (a-cell serial (list valor))))
+
+
 
 
 ;****************************************************************************************
