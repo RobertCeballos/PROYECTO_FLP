@@ -18,11 +18,11 @@
     (cases variable var
       (a-variable (serial valor) valor))))
 
-(define isFree?
-  (lambda (var)
-    (cases variable var
-      (a-variable (serial valor)
-                 (if (equal? (car valor) '_) #t #f)))))
+;(define isFree?
+;  (lambda (var)
+;    (cases variable var
+;      (a-variable (serial valor)
+;                 (if (equal? (car valor) '_) #t #f)))))
 
 (define isDet?
   (lambda (var)
