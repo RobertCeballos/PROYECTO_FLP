@@ -137,7 +137,7 @@
            (cases program pgm
              (a-program (body)
                         (eval-expression body (init-env))))))
-         resultado
+       (print  resultado)
       )))
 
 
