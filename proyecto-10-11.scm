@@ -398,10 +398,11 @@
 ;Asignar una variable a una celda
 (define asig-var-cel
   (lambda(var1 var2 env)
+    (let ((var1 (eval-expression var1 env))
+          (var2 (eval-expression var2 env)))
       (if (isFree? (get-serial var1))
-          (if (celda? var2)
-              (eopl:error 'asig-var "Alguna de las variables ya esta determinada"  var1)))))
-;          (set-store-cell (get-serial var1) var2)))
+ ;             (eopl:error 'asig-var "Alguna de las variables ya esta determinada"  var1)))))
+          (set-store-cell (get-serial var1) (get-valor-cell var2))))))
 ;          (apply-env-env env(car (get-valor var1)) (get-serial-cell var2))))) 
         
 ;Asignar una variable a otra variable
