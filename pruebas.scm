@@ -8,14 +8,14 @@ isdet?{B}
 isfree?{A}
 
 
-local{X}
+local X
 in
 set X = 5
 X
 end
 
 
-local{X Y}
+local X Y
   in
     set B=Y
     set Y=X
@@ -23,9 +23,9 @@ local{X Y}
 end
 
 
-local{X}
+local X
  in
-  local{Y}
+  local Y
    in
     set Y=12
     set Y=X
@@ -34,7 +34,7 @@ local{X}
 end
 
 
-local{X Y}
+local X Y
 in
 set X = ~5.0
 set 3.2 = Y
@@ -42,7 +42,7 @@ set 3.2 = Y
 end
 
 
-local{X Y Z}
+local X Y Z
 in
 set X = ~5.0
 set 3.2 = Y
@@ -50,7 +50,7 @@ set Z= *{X Y}
 Z
 end
 
-local{X Y Z}
+local X Y Z
 in
 set X = +{2.0 4.0}
 set 3.2 = Y
@@ -66,3 +66,34 @@ local {I F}
   +{Y Y}
  end
 end
+
+
+;Registros
+local
+X
+in
+set X = miregistro(campo1:8 campo2:9)
+X
+end
+
+local
+Rec X
+in
+set Rec = miregistro(campo1:X campo2:4)
+set X = 10
+*{.Rec.campo1 .Rec.campo2}
+end
+
+
+local
+Rec X Y
+in
+set Rec = miregistro(campo1:X campo2:4)
+set X = 10
+set Y = *{.Rec.campo1 .Rec.campo2}
+Y
+end
+
+
+
+
