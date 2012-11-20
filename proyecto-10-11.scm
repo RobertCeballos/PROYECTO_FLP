@@ -42,7 +42,7 @@
     
     (expression (flotante) flotante-exp)
     
-    (expression ("local" "{" (arbno variable)"}" "in" cuerpo "end") local-exp)
+    (expression ("local"  (arbno variable) "in" cuerpo "end") local-exp)
     
     (expression (primitive "{" (arbno expression)"}") primapp-exp)
     
@@ -59,6 +59,8 @@
     (expression ("[" (arbno expression) "]")list-exp)
     
     (expression (atomo "(" (arbno atomo ":" expression) ")") record-exp)
+    
+    (expression ("." variable "." atomo) acc-camp-reg)
     
     
     ;BOOLEANOS
@@ -135,7 +137,7 @@
            (cases program pgm
              (a-program (body)
                         (eval-expression body (init-env))))))
-       (print resultado)
+         resultado
       )))
 
 
@@ -222,11 +224,15 @@
 ;                  (let ((cel (eval-expression exp env)))
 ;                    (apply-primitive prim cel)))
       
-      (record-exp (etiq camp vals) vals)
-                    
+      (record-exp (etiq camp vals) 
+                  (let ((vector (make-vector 1)))
+                    (vector-set! vector 0 vals)
+                    (create-var (+ (length (vector-ref init-store 0)) (length vals))(reg-datos etiq camp vector))))
+      (acc-camp-reg (nomReg camp) 
+                    (cons-camp-reg nomReg camp env)) 
       
-      (set-exp (vars exp)  
-               (asignar vars exp env)) 
+      (set-exp (vars exp) 
+               (asignar vars exp env))
                    
       (bool-exp (exp)
                 (cases boolean exp
@@ -261,6 +267,9 @@
                            
       ))) 
       
+    
+
+    
 ;;******************************************************************************************
 ;local {I F} in
 ;set I =1
@@ -291,7 +300,7 @@
  
 (define for-result 0) 
 
-;;;FUNCION aUXILIaR DE (FOR) REaLIZa LaS ITERaCIONES
+;;;FUNCION aUXILIaR DE (FOR) REaLIZa LaS ITERaCIONES 
 (define for-exp-aux
     (lambda (var ini fin body env arg)
 ;      (primitive-setref!
@@ -368,36 +377,36 @@
     (if (equal? posF (+(length (vector-ref init-store 0)) cant)) ()
         (cons  posF  (asig-pos-env cant (+ posF 1)))))) 
 
-;Funcion que de acuerdo al tipo de elemento realiza una asignacion
+;Funcion que de acuerdo al tipo de elemento realiza una asignacion (cambio en esta funcion)
 (define asignar
   (lambda (var1 var2 env)
-     (if (or (celda? (eval-expression var1 env))(celda? (eval-expression var2 env)))
-        (asig-var-cel var1 var2 env)
-        ;;terminar condicionnnn
+     (if (or (celda? (eval-expression var1 env))(celda? (eval-expression var2 env)))(asig-var-cel var1 var2 env)
+;        ;;terminar condicionnnn
+         (let ((var1 (eval-expression var1 env))
+               (var2 (eval-expression var2 env)))
+             (cond
+               ((and (variable? var1) (variable? var2))
+                (cond
+                  ((and (symbol? (car (get-valor var1))) (symbol? (car (get-valor var2)))) (asig-var-var var1 var2 env))
+                  ((and (symbol? (car (get-valor var1))) (registro? (car (get-valor var2)))(asig-var-reg var1 var2 env)))))
+               ((or(number?  var1) (number? var2)) (asig-var-num var1 var2)))))))
+                
        
-    (if (and (variable? (eval-expression var1 env)) (variable? (eval-expression var2 env)))(asig-var-var var1 var2 env)
-        (if (or(number? (eval-expression var1 env)) (number? (eval-expression var2 env))) (asig-var-num var1 var2 env)
-            (if (or (expression? var1) (expression? var1))
-                    (if(expression? var1)
-                       (asig-var-num (eval-expression var1) var2)
-                       (asig-var-num var1 (eval-expression var2)))))))))
 
-    ;Asignar una variable a una celda
+
+
+;Asignar una variable a una celda
 (define asig-var-cel
   (lambda(var1 var2 env)
-    (let ((var1 (eval-expression var1 env))
-          (var2 (eval-expression var2 env)))
       (if (isFree? (get-serial var1))
           (if (celda? var2)
-              (eopl:error 'asig-var "Alguna de las variables ya esta determinada"  var1))))))
+              (eopl:error 'asig-var "Alguna de las variables ya esta determinada"  var1)))))
 ;          (set-store-cell (get-serial var1) var2)))
 ;          (apply-env-env env(car (get-valor var1)) (get-serial-cell var2))))) 
         
 ;Asignar una variable a otra variable
 (define asig-var-var
   (lambda(var1 var2 env)
-   (let ((var1 (eval-expression var1 env))
-         (var2 (eval-expression var2 env)))
      (let ((serial1 (get-serial var1))
            (serial2(get-serial var2)))
       (if (or (isFree? (get-serial var1)) (isFree? (get-serial var2))) 
@@ -406,32 +415,57 @@
               (eopl:error 'asig-var "Alguna de las variables ya esta determinada")
            )
        
-       ))))
+       )))
 
       
 ;Asignar una variable a un numero
 (define asig-var-num
-  (lambda (var1 var2 env)
-    (let ((var1 (eval-expression var1 env))
-          (var2 (eval-expression var2 env)))
+  (lambda (var1 var2)
     (let ((var (verificar-sym-var var1 var2 variable?))
           (num (verificar-sym-var var1 var2 number?)))
       (if (isFree? (get-serial var))
           (set-store (get-serial var) num)
           (eopl:error 'asig-var-num "Varible ~s ya derminada" (car (get-valor var)))
-      )))))
+      ))))
+
+;Asignar una variable a un registro
+(define asig-var-reg
+  (lambda (var1 var2 env)
+        (if (isFree? (get-serial var1))
+              (cases registro (car (get-valor var2))
+                (reg-vacio (etiq) ())
+                (reg-datos (etiq camp vals) 
+                           (begin
+                           (create-reg etiq camp (vector-ref vals 0 ) env)
+                           (apply-env-env env (car (get-valor var1))(get-serial var2) )))))))
+        
 
 
 ;Funcion que determina si una variable esta libre
 (define isFree?
   (lambda(pos)
-    (equal? (car (apply-store pos)) '_))) 
+    (equal? (car (apply-store pos)) '_)))  
 
 ;verificar-sym-var: funcion q verifica cual de los dos elementos entrantes es el simbolo  x=7 7=x
 (define verificar-sym-var
   (lambda (var1 var2 pred)
     (if (pred var1) var1
         var2)))
+
+ 
+;Funcion que permite consultar el campo de un registro
+(define cons-camp-reg
+  (lambda (nomReg camp env)
+    (let ((serial(apply-env env nomReg)))
+      (let ((reg (car (apply-store serial))))
+        (if(registro? reg) 
+           (let ((serialCamp(consultar-val-registro reg camp)))
+             (car (apply-store serialCamp))
+             )
+          (eopl:error 'cons-camp-reg "Error: no es un registro ~s" reg) 
+           ))) ))
+
+
 
 
 ;aplicar eval-expression a cada elemento de una 
@@ -679,6 +713,37 @@
 
 ;*******************************************************************************************
 ;**********************************FUNCIONES REGISTROS**************************************
+;Funcion crear registro
+(define create-reg
+  (lambda (etiq camp val env)
+    (let ((seriales (make-vector 1))
+          (vals (asignar-pos-en-store val)))
+      (vector-set! seriales 0  (eval-datos val vals 0 env))
+      (let ((newReg (reg-datos etiq camp seriales)))
+        (map (lambda (x) (update-store (create-var  (length(vector-ref init-store 0))  (eval-expression x env) ) )) val)
+      (update-store (create-var  (length(vector-ref init-store 0)) newReg))
+        init-store
+      ;(create-var  (- (length(vector-ref init-store 0)) 1) newReg)
+      ;init-store
+      ))))
+
+
+;FUncion que permite guardar las posiciones a las que apuntan los valores de un registro
+(define eval-datos
+  (lambda (val vals pos env)
+    (if (null? val) vals
+        (begin
+          (let ((vals (aux-evaluar-datos (eval-expression (car val)  env) vals pos)))
+          (eval-datos (cdr val)  vals (+ pos 1) env ))))))
+
+
+(define aux-evaluar-datos
+  (lambda (elemento vals pos)
+     (if (number? elemento) vals
+                 (if (variable? elemento) (let ((vals (setElement vals pos (get-serial elemento))))
+                    vals)))))
+    
+    
 
 ;FUNCION: asignar un valor en un campo 
 (define asignar-val-registro
@@ -701,15 +766,21 @@
   (lambda (reg cam)
     (cases registro reg
       (reg-vacio (etiq)
-                 (eopl:error 'asignar-val-registro
+                 (eopl:error 'consultar-val-registro
                              "Error: este registro no contiene campos"
                              val))
       (reg-datos (etiq campos vals)
                  (let ((pos (list-find-position cam campos)))
                    (if (number? pos)
-                       (vector-ref vals pos)
-                       (eopl:error 'asignar-val-registro
-                             "Error: este registro no contiene el campo dado" cam)))))))
+                       (list-ref (vector-ref vals 0) pos)
+                       (eopl:error 'consultar-val-registro
+                             "Error: este registro no contiene el campo ~s" cam)))))))
+
+
+;Funcion que asigna una posicion a los elementos de un registro dentro del store
+(define asignar-pos-en-store
+  (lambda (lista)
+    (asig-pos-env (length lista) (length(vector-ref init-store 0)) )))
  
 
 ;*******************************************************************************************
@@ -753,3 +824,11 @@
         (cons (car lista) (setElement (cdr lista) (- n 1) elemento)))))
 
 ;**************************************************************
+
+
+  
+
+(define miRegistro (reg-datos 'miRegistro '(campo1 campo2 campo3) #((1 2 3))))
+;(update-store (create-var (length(vector-ref init-store 0)) miRegistro))
+;init-store
+;(asignar-pos-en-store '(1 2 3))
