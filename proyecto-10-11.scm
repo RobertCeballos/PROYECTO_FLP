@@ -18,6 +18,7 @@
   (comment("%" (arbno (not #\newline))) skip)
   (variable ((or "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "Ñ" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z") 
                (arbno (or letter digit "?")) ) symbol)
+  (anonymous-variable ("_") symbol)
   (atomo  ((or "a" "b" "c" "ch" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "ñ" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" )
           (arbno  (or letter digit ) ))symbol)
           ;( (arbno "'" letter "'") )) ) symbol)
@@ -28,16 +29,21 @@
   (flotante (digit (arbno digit) "." digit (arbno digit)) string)
   (flotante ("~" digit (arbno digit) "." digit (arbno digit))string)
   ))
+
 ;*************************************GRAMATICA*******************************************
 ;Especificación Sintáctica (gramática)
 
-
-
 (define grammar-simple-interpreter
   '(
+    
     (program (expression) a-program)
+    
     (cuerpo (expression (arbno expression)) cuerpoc)
+    
     (expression (variable) var-exp)
+    
+    (expression (anonymous-variable) a-var-exp)
+    
     (expression (entero) entero-exp)
     
     (expression (flotante) flotante-exp)
@@ -197,6 +203,7 @@
 ;**************************************************************************************
 ;;************************************Expresiones************************************
 ;eval-expression
+
 (define eval-expression 
   (lambda (exp env)
     (cases expression exp
@@ -207,6 +214,8 @@
       
       (var-exp (id) (let ((serial (apply-env env id)))
                      (create-var serial id)))
+      
+      (a-var-exp (valor) (create-var serial valor))
       
       (list-exp (exps)
                 ())
@@ -378,6 +387,7 @@
         (cons  posF  (asig-pos-env cant (+ posF 1)))))) 
 
 ;Funcion que de acuerdo al tipo de elemento realiza una asignacion (cambio en esta funcion)
+
 (define asignar
   (lambda (var1 var2 env)
      (if (or (celda? (eval-expression var1 env))(celda? (eval-expression var2 env)))(asig-var-cel var1 var2 env)
@@ -538,6 +548,7 @@
     
 ;*******************************************************************************************
  ;***************************FUNCIONES AUX APPLY PRIMITIVE***********************************
+
 ;Funcion que opera un conjunto de numeros dependiendo del signo
 (define operar
      (lambda (pred lista n)
@@ -548,6 +559,7 @@
 
 ;Funcion para convertir un symbolo a numero
 ;(substring "~5" 0 1) retorna ~
+
 (define parse-to-number
   (lambda (args)
     (if (null? args) ()
@@ -728,7 +740,7 @@
       ))))
 
 
-;FUncion que permite guardar las posiciones a las que apuntan los valores de un registro
+;Funcion que permite guardar las posiciones a las que apuntan los valores de un registro
 (define eval-datos
   (lambda (val vals pos env)
     (if (null? val) vals
