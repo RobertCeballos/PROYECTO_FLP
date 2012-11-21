@@ -51,9 +51,9 @@
     
     (expression (primitive "{" (arbno expression)"}") primapp-exp)
     
-    (expression ( "{" primitive (arbno expression)"}")
-                primcell-exp)
-    
+;    (expression ( "{" primitive (arbno expression)"}")
+;                primcell-exp)
+;    
    ; (expression ( primitive expression) check-cell)
     
     (expression ("set" expression "=" expression)set-exp)
@@ -249,22 +249,13 @@
                    (let ((args (eval-primapp-exp-rands rands env)))
                      (apply-primitive prim args)))
       
-      (primcell-exp (prim val)
-                    (let ((arg (to-number val)))
-                      (apply-primitive prim arg)))
-                       
-      
-;      (check-cell (prim exp)
-;                  (let ((cel (eval-expression exp env)))
-;                    (apply-primitive prim cel)))
-      
       (record-exp (etiq camp vals) 
                   (let ((vector (make-vector 1)))
                     (vector-set! vector 0 vals)
                     (create-var (+ (length (vector-ref init-store 0)) (length vals))(reg-datos etiq camp vector))))
       (acc-camp-reg (nomReg camp) 
                     (cons-camp-reg nomReg camp env)) 
-      
+       
       (set-exp (vars exp) 
                (asignar vars exp env))
                    
@@ -272,7 +263,7 @@
                 (cases boolean exp
                   (true-exp () #t)
                   (false-exp () #f)))
-      
+       
       (local-exp (vars body) 
                  (begin
                    (let ((list-serials (asig-pos-env (length vars) (length (vector-ref init-store 0)))))
@@ -282,15 +273,14 @@
       (for-exp (var var-val var-stop body)
                (let ((arg (asig-pos-env (length var) 
                     (length (vector-ref init-store 0)))))
-;                 (if (number? arg)(eopl:error 'apply-env "Noooooo binding for ~s" arg))
-                 
+                                 
           (let (( var-v (eval-expression var-val env)))
           (let (( var-s (eval-expression var-stop env)))
             
                 (let ((varv (car (apply-store (get-serial var-v)))))
                 (let ((vars (car (apply-store (get-serial var-s)))))
                   (update-store var-v)
-                 (if (variable? var-v)(eopl:error 'apply-env "Noooooo binding for ~s" (car (get-valor var-v))))
+;                 (if (variable? var-v)(eopl:error 'apply-env "Noooooo binding for ~s" (length (vector-ref init-store 0)))
         (for-exp-aux  (car var)
                       varv 
                       vars 
@@ -298,7 +288,7 @@
                      (extend-env var arg env) 
                      (car arg))
                   ))))))
-                           
+                            
       ))) 
       
     
@@ -410,7 +400,7 @@
   (lambda (cant posF)
     (if (equal? posF (+(length (vector-ref init-store 0)) cant)) ()
         (cons  posF  (asig-pos-env cant (+ posF 1)))))) 
-
+ 
 ;Funcion que de acuerdo al tipo de elemento realiza una asignacion (cambio en esta funcion)
 
 (define asignar
@@ -435,9 +425,15 @@
   (lambda(var1 var2 env)
     (let ((var1 (eval-expression var1 env))
           (var2 (eval-expression var2 env)))
-      (if (isFree? (get-serial var1))
- ;             (eopl:error 'asig-var "Alguna de las variables ya esta determinada"  var1)))))
-          (set-store-cell (get-serial var1) (get-valor-cell var2))))))
+      (update-store var2)
+      ;(if (isFree? (get-serial var1))
+      (let ((val (car(apply-store (get-serial-cell var2)))))
+         (if (celda? var2)
+             ;(eopl:error 'asig-var "Alguna de las variables ya esta determinada" val))))))
+;             
+;;             (eopl:error 'asig-var "Alguna de las variables ya esta determinada"  (get-serial-cell (get-serial var1)))
+;;             )))))
+         (set-store-cell (get-serial var1) val))))))
 ;          (apply-env-env env(car (get-valor var1)) (get-serial-cell var2))))) 
         
 
@@ -564,16 +560,20 @@
           (unif-prim() ())
           (isfree-prim() (isFree?(get-serial(car args))))
           (isdet-prim() (not(isFree?(get-serial(car args)))))
-   
-          (newcell-prim()(create-cell (length (vector-ref init-store 0)) args ))
-          
+    
+          (newcell-prim() (create-cell (length (vector-ref init-store 0)) (car args)))
+                       
+;                       (let ((cel(create-cell (length (vector-ref init-store 0)) (car args))))
+;                                    ;(update-store cel)
+;                            ))
+                                               
           (valcell-prim() 
                        (if (variable? (car args))
                               (eopl:error 'apply-primitive "Error: Cantidad de operandos incorrecta" (car args))))
-                             ; (get-valor-cell arg)))
+                          ;    (get-valor (car args)))
                                                       
       )))
-
+ 
     
 ;*******************************************************************************************
  ;***************************FUNCIONES AUX APPLY PRIMITIVE***********************************
@@ -733,7 +733,7 @@
 
 (define set-store-cell
   (lambda (pos val)
-    (vector-set! init-store 0 (setElement (vector-ref init-store 0) pos val))))
+    (vector-set! init-store 0 (setElement (vector-ref init-store 0) pos (create-cell pos val)))))
                
 
 ;Funcion que busca un serial ene el store y devuelve su valor asociado
@@ -749,7 +749,13 @@
             (a-variable (serialE valor)
                         (if (equal? serialE serial) 
                             valor
-                            (aux-apply-store serial (cdr lista)))))))))
+                            (aux-apply-store serial (cdr lista)))))
+                            (if (celda? (car lista))
+                                (cases celda (car lista)
+                                  (a-cell (serialC valor)
+                                   (if (equal? serialC serial) 
+                            valor  
+                            (aux-apply-store serial (cdr lista))))))))))
 
 
 ;*******************************************************************************************
