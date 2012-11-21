@@ -2,7 +2,6 @@
   (a-variable (serial number?)
               (valor list?))) 
 
-
 (define create-var
   (lambda (serial valor)
     (a-variable serial (list valor))))

@@ -18,7 +18,6 @@
   (comment("%" (arbno (not #\newline))) skip)
   (variable ((or "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "Ñ" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z") 
                (arbno (or letter digit "?")) ) symbol)
-  (anonymous-variable ("_") symbol)
   (atomo  ((or "a" "b" "c" "ch" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "ñ" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" )
           (arbno  (or letter digit ) ))symbol)
           ;( (arbno "'" letter "'") )) ) symbol)
@@ -42,7 +41,7 @@
     
     (expression (variable) var-exp)
     
-    (expression (anonymous-variable) a-var-exp)
+    (expression ("_") a-var-exp)
     
     (expression (entero) entero-exp)
     
@@ -164,10 +163,11 @@
 ;Store inicial
 (define init-store
   (let ((store (make-vector 1))
-        (A (a-variable 0 (list 5) ))
+        (A (a-variable 3 (list 5) ))
         (B (a-variable 1 (list -10)))
-        (C (a-variable 2 (list 15))))
-    (vector-set! store 0 (list A B C))
+        (C (a-variable 2 (list 15)))
+        (Anonima (a-variable 0 (list "_"))))
+    (vector-set! store 0 (list Anonima A B C))
     store
     ))
 
@@ -199,7 +199,32 @@
              (campos (list-of symbol?))
              (vals vector?)))
 
- 
+;**********************************VARIABLES ANONIMAS*********************************
+(define buscar-underscore 
+  (lambda (lista)
+    (cond
+      [(not(equal? "_" (car lista))) #f]
+      [(equal? "_" (car lista)) #t]
+      [(buscar-underscore(cdr lista))])
+    )
+  )
+
+(define poner-underscore
+  (lambda (lista)
+    (if (buscar-underscore lista) lista
+        (append (list "_") lista))))
+
+
+;; funcion que crea una variable anonima poniendo _ en el store
+
+(define create-a-var 
+  (lambda ()
+    (poner-underscore (vector-ref init-store 0))
+    ))
+
+
+
+
 ;**************************************************************************************
 ;;************************************Expresiones************************************
 ;eval-expression
@@ -215,7 +240,7 @@
       (var-exp (id) (let ((serial (apply-env env id)))
                      (create-var serial id)))
       
-      (a-var-exp (valor) (create-var serial valor))
+      (a-var-exp () create-a-var())
       
       (list-exp (exps)
                 ())
@@ -390,7 +415,7 @@
 
 (define asignar
   (lambda (var1 var2 env)
-     (if (or (celda? (eval-expression var1 env))(celda? (eval-expression var2 env)))(asig-var-cel var1 var2 env)
+     (if (or (celda? (eval-expression var1 env)) (celda? (eval-expression var2 env))) (asig-var-cel var1 var2 env)
 ;        ;;terminar condicionnnn
          (let ((var1 (eval-expression var1 env))
                (var2 (eval-expression var2 env)))
@@ -415,6 +440,7 @@
           (set-store-cell (get-serial var1) (get-valor-cell var2))))))
 ;          (apply-env-env env(car (get-valor var1)) (get-serial-cell var2))))) 
         
+
 ;Asignar una variable a otra variable
 (define asig-var-var
   (lambda(var1 var2 env)
@@ -430,6 +456,7 @@
 
       
 ;Asignar una variable a un numero
+
 (define asig-var-num
   (lambda (var1 var2)
     (let ((var (verificar-sym-var var1 var2 variable?))
@@ -438,6 +465,7 @@
           (set-store (get-serial var) num)
           (eopl:error 'asig-var-num "Varible ~s ya derminada" (car (get-valor var)))
       ))))
+
 
 ;Asignar una variable a un registro
 (define asig-var-reg
