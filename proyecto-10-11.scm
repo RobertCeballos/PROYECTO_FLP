@@ -16,7 +16,7 @@
 (define scanner-spec-simple-interpreter
 '((white-sp(whitespace) skip)
   (comment("%" (arbno (not #\newline))) skip)
-  (variable ((or "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "Ñ" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z") 
+  (variable ((or "_" "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "Ñ" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z") 
                (arbno (or letter digit "?")) ) symbol)
   (atomo  ((or "a" "b" "c" "ch" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "ñ" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" )
           (arbno  (or letter digit ) ))symbol)
@@ -137,7 +137,7 @@
            (cases program pgm
              (a-program (body)
                         (eval-expression body (init-env))))))
-       (print  resultado)
+           (print resultado)
       )))
 
 
@@ -205,8 +205,10 @@
       
       (flotante-exp (flt)(parse-to-number flt)) 
       
-      (var-exp (id) (let ((serial (apply-env env id)))
-                     (create-var serial id)))
+      (var-exp (id) 
+               (if (equal? id '_) (update-store2 (create-var  (length(vector-ref init-store 0))  id ) )
+                     (let ((serial (apply-env env id)))
+                                (create-var serial id))))
       
       (list-exp (exps)
                 ())
@@ -225,9 +227,11 @@
 ;                    (apply-primitive prim cel)))
       
       (record-exp (etiq camp vals) 
-                  (let ((vector (make-vector 1)))
-                    (vector-set! vector 0 vals)
-                    (create-var (+ (length (vector-ref init-store 0)) (length vals))(reg-datos etiq camp vector))))
+                  (begin
+                    (let ((vector-vals (make-vector 1)))
+                      (vector-set! vector-vals 0 vals)
+                      (reg-datos etiq camp vector-vals))))
+
       (acc-camp-reg (nomReg camp) 
                     (cons-camp-reg nomReg camp env)) 
       
@@ -291,7 +295,7 @@
 (define get-valor
   (lambda (var)
     (cases variable var
-      (a-variable (serial valor) valor))))
+      (a-variable (serial valor) valor)))) 
 
     (define get-valor-cell
      (lambda (var)
@@ -387,9 +391,17 @@
              (cond
                ((and (variable? var1) (variable? var2))
                 (cond
-                  ((and (symbol? (car (get-valor var1))) (symbol? (car (get-valor var2)))) (asig-var-var var1 var2 env))
-                  ((and (symbol? (car (get-valor var1))) (registro? (car (get-valor var2)))(asig-var-reg var1 var2 env)))))
-               ((or(number?  var1) (number? var2)) (asig-var-num var1 var2)))))))
+                  ((and (symbol? (car (get-valor var1))) (registro? (car (get-valor var2)))(asig-var-reg var1 var2 env))) ;variable-registro
+                  ((or (and (symbol? (car (get-valor var1))) (symbol? (car (get-valor var2)))) ; variable-variable
+                       (and (number? (car (get-valor var1))) (symbol? (car (get-valor var2)))) ;campoReg-var
+                       (and (symbol? (car (get-valor var1))) (number? (car (get-valor var2)))) ;var-campoReg
+                       (and (number? (car (get-valor var1))) (number? (car (get-valor var2))))) ;campoReg-campoReg
+                   (asig-var-var var1 var2 env))
+                  
+                  )) 
+               ((or(number?  var1) (number? var2)) (asig-var-num var1 var2));variable-numero o numero-variable
+               ((and (symbol? (car (get-valor var1))) (registro?  var2))(asig-var-reg var1 var2 env))
+               )))))
                 
        
 
@@ -409,12 +421,15 @@
   (lambda(var1 var2 env)
      (let ((serial1 (get-serial var1))
            (serial2(get-serial var2)))
-      (if (or (isFree? (get-serial var1)) (isFree? (get-serial var2))) 
-          (if (isFree? (get-serial var1))(apply-env-env env(car (get-valor var1)) (get-serial var2))
-              (if (isFree? (get-serial var2)) (apply-env-env env (car (get-valor var2))(get-serial var1) )))
+       
+      (if (or (isFree2? (get-serial var1)) (isFree2? (get-serial var2)))
+          
+          (if (isFree2? (get-serial var1))(set-store (get-serial var1) (create-var (get-serial var2) (car (get-valor var2))))
+              
+              (if (isFree2? (get-serial var2))(set-store (get-serial var2) (create-var (get-serial var1) (car (get-valor var1))))))
+          
               (eopl:error 'asig-var "Alguna de las variables ya esta determinada")
            )
-       
        )))
 
       
@@ -423,7 +438,7 @@
   (lambda (var1 var2)
     (let ((var (verificar-sym-var var1 var2 variable?))
           (num (verificar-sym-var var1 var2 number?)))
-      (if (isFree? (get-serial var))
+      (if (isFree2? (get-serial var))
           (set-store (get-serial var) num)
           (eopl:error 'asig-var-num "Varible ~s ya derminada" (car (get-valor var)))
       ))))
@@ -432,13 +447,24 @@
 (define asig-var-reg
   (lambda (var1 var2 env)
         (if (isFree? (get-serial var1))
-              (cases registro (car (get-valor var2))
+              (cases registro var2
                 (reg-vacio (etiq) ())
                 (reg-datos (etiq camp vals) 
                            (begin
-                           (create-reg etiq camp (vector-ref vals 0 ) env)
-                           (apply-env-env env (car (get-valor var1))(get-serial var2) )))))))
+                           (let ((regEnStore(create-reg etiq camp (vector-ref vals 0 ) env)))
+                             (set-store (get-serial var1) regEnStore))))))))
+                            
+                          ;(apply-env-env env (car (get-valor var1)) (get-serial regEnStore) ))))))))
         
+
+
+;Funcion q determina si una variable esta libre (una variable puede referenciar a otra variable)
+(define isFree2?
+  (lambda (pos)
+    (let ((var (car(apply-store pos))))
+    (if(variable? var) (isFree2? (get-serial var));(isFree2? (get-serial var))
+       (if (equal? var '_) #t #f)))))
+
 
 
 ;Funcion que determina si una variable esta libre
@@ -456,16 +482,28 @@
 ;Funcion que permite consultar el campo de un registro
 (define cons-camp-reg
   (lambda (nomReg camp env)
-    (let ((serial(apply-env env nomReg)))
-      (let ((reg (car (apply-store serial))))
-        (if(registro? reg) 
-           (let ((serialCamp(consultar-val-registro reg camp)))
-             (car (apply-store serialCamp))
-             )
-          (eopl:error 'cons-camp-reg "Error: no es un registro ~s" reg) 
-           ))) ))
+    (let ((serialVar(apply-env env nomReg)))
+      (let ((serial (get-last-ref2 serialVar)))
+        (let ((reg (car (apply-store serial))))
+          (if(registro? reg) 
+             (let ((serialCamp(consultar-val-registro reg camp)))
+               (get-last-ref serialCamp serial))
+             (eopl:error 'cons-camp-reg "Error: no es un registro ~s" reg) 
+             ))) )))
 
+;Funcion que retorna la ultima referencia a una variable          
+(define get-last-ref
+  (lambda (serialCamp serial)
+    (let ((var (car(apply-store serialCamp))))
+      (if (variable? var) (get-last-ref (get-serial var) serial)
+          (create-var serialCamp serial)))))
 
+;Funcion que retorna el ultimo serial de referencia de una variable
+(define get-last-ref2
+  (lambda (serial)
+    (let ((var (car(apply-store serial))))
+      (if (variable? var) (get-last-ref2 (get-serial var))
+          serial))))
 
 
 ;aplicar eval-expression a cada elemento de una 
@@ -670,7 +708,7 @@
   (lambda (env sym newSerial)
     (cases environment env
       (empty-env-record ()
-                        (eopl:error 'apply-env "No binding for ~s" sym))
+                        #f) ;(eopl:error 'apply-env-env "No binding for ~s" sym))
       (extended-env-record (syms vals env)
                            (let ((pos (list-find-position sym syms)))
                              (if (number? pos)
@@ -689,6 +727,15 @@
 (define set-store
   (lambda (pos val)
     (vector-set! init-store 0 (setElement (vector-ref init-store 0) pos (create-var pos val)))))
+
+
+;funcion que actualiza un store y devuelve el serial dl ultimo elemento 
+(define update-store2
+  (lambda (valor)
+    (vector-set! init-store 0 (append (vector-ref init-store 0)(list valor)))
+    (list-ref (vector-ref init-store 0) (- (length (vector-ref init-store 0)) 1))
+    ))
+
 
 (define set-store-cell
   (lambda (pos val)
@@ -711,42 +758,28 @@
                             (aux-apply-store serial (cdr lista)))))))))
 
 
+
 ;*******************************************************************************************
 ;**********************************FUNCIONES REGISTROS**************************************
 ;Funcion crear registro
 (define create-reg
   (lambda (etiq camp val env)
-    (let ((seriales (make-vector 1))
-          (vals (asignar-pos-en-store val)))
-      (vector-set! seriales 0  (eval-datos val vals 0 env))
-      (let ((newReg (reg-datos etiq camp seriales)))
-        (map (lambda (x) (update-store (create-var  (length(vector-ref init-store 0))  (eval-expression x env) ) )) val)
-      (update-store (create-var  (length(vector-ref init-store 0)) newReg))
-        init-store
-      ;(create-var  (- (length(vector-ref init-store 0)) 1) newReg)
-      ;init-store
-      ))))
+    (let ((vector-seriales (make-vector 1))
+          (val-in-store(map (lambda (x) (let ((evalExp(eval-expression x env)))
+                                          (update-store2 (create-var  (length(vector-ref init-store 0))evalExp )))) val)))
+      (let ((listSeriales (map (lambda (x) (get-serial x)) val-in-store)))
+      (vector-set! vector-seriales 0 listSeriales)
+      
+      (let ((newReg (reg-datos etiq camp vector-seriales)))
+        (update-store (create-var  (length(vector-ref init-store 0)) newReg))
+        (list-ref (vector-ref init-store 0) (- (length (vector-ref init-store 0)) 1))
+    )))))
 
 
-;FUncion que permite guardar las posiciones a las que apuntan los valores de un registro
-(define eval-datos
-  (lambda (val vals pos env)
-    (if (null? val) vals
-        (begin
-          (let ((vals (aux-evaluar-datos (eval-expression (car val)  env) vals pos)))
-          (eval-datos (cdr val)  vals (+ pos 1) env ))))))
+       
 
-
-(define aux-evaluar-datos
-  (lambda (elemento vals pos)
-     (if (number? elemento) vals
-                 (if (variable? elemento) (let ((vals (setElement vals pos (get-serial elemento))))
-                    vals)))))
-    
-    
-
-;FUNCION: asignar un valor en un campo 
-(define asignar-val-registro
+;FUNCION: asignar un valor a un campo de un registro
+(define asig-val-cam-reg
   (lambda (reg cam val)
     (cases registro reg
       (reg-vacio (etiq)
@@ -756,10 +789,14 @@
       (reg-datos (etiq campos vals)
                  (let ((pos (list-find-position cam campos)))
                    (if (number? pos)
-                       (if (eqv? (vector-ref vals pos) '_)
-                           (vector-set! vals pos val))
-                       (eopl:error 'asignar-val-registro
-                             "Error: este registro no contiene el campo dado" cam)))))))
+                         (let ((valor(car(apply-store pos))))
+                           (if (equal? valor '_)
+                               (set-store pos val)
+                               (eopl:error 'asignar-val-registro "Error: campo asignado" ))
+                           (eopl:error 'asignar-val-registro
+                            "Error: este registro no contiene el campo ~s" cam))))))))
+
+   
 
 ;FUNCION: consultar valor de un campo en un registro
 (define consultar-val-registro
@@ -774,7 +811,7 @@
                    (if (number? pos)
                        (list-ref (vector-ref vals 0) pos)
                        (eopl:error 'consultar-val-registro
-                             "Error: este registro no contiene el campo ~s" cam)))))))
+                             "Error: este registro no contiene el campo ~s" campos)))))))
 
 
 ;Funcion que asigna una posicion a los elementos de un registro dentro del store
@@ -828,7 +865,9 @@
 
   
 
-(define miRegistro (reg-datos 'miRegistro '(campo1 campo2 campo3) #((1 2 3))))
+(define miRegistro (reg-datos 'miRegistro '(campo1 campo2 campo3) #((_ 2 3))))
+
+;(asig-val-cam-reg miRegistro 'campo1 2)
 ;(update-store (create-var (length(vector-ref init-store 0)) miRegistro))
 ;init-store
 ;(asignar-pos-en-store '(1 2 3))
