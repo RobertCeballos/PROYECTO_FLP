@@ -95,5 +95,59 @@ Y
 end
 
 
+local
+Rec1 X Y
+in
+miregistro(campo1:X campo2:4)
+end
+
+
+
+local X Y Z
+in
+set X = miregistro(campo1:_ campo2:Y)
+set .X.campo2 = 2
+set Z = +{Y 1} 
+Z
+end
+
+local
+Rec X Y
+in
+set Rec = miregistro(campo1:X campo2:_)
+set X = 10
+set .Rec.campo2 = .Rec.campo1 
+.Rec.campo2
+end
+
+local X Y Z
+in
+set Y=A
+set X = miregistro(campo1:_ campo2:Y)
+.X.campo2
+end
+
+
+local
+Rec X Y Z
+in
+set Rec = miregistro(campo1:Z campo2:_)
+set Y = X
+set X = 10
+set Z= X
+Y
+end
+
+
+ local
+Rec X Y
+in
+set Rec = miregistro(campo1:X campo2:_)
+set X = 10
+set .Rec.campo2 = A
+.Rec.campo2
+end
+
+
 
 
