@@ -394,6 +394,11 @@
   (lambda (vars)
     (map (lambda (x) (update-store (create-var  (length(vector-ref init-store 0))  '_ ) )) vars)))
 
+
+(define save-in-store-cell
+  (lambda (vars num)
+    (map (lambda (x) (update-store (create-cell  (length(vector-ref init-store 0))  num ) )) vars)))
+
                  
 ;Funcion que asigna posiciones en un ambiente (local{X} in X end
 ;ej: si init-store tiene 3 elementos  y le quiero agregar 2 al ambiente, entoncs cant=2 posF=3
@@ -427,14 +432,19 @@
     (let ((var1 (eval-expression var1 env))
           (var2 (eval-expression var2 env)))
       (update-store var2)
+      (if (isFree? (get-serial var1))
+                  ; (save-in-store-cell (list(car (get-valor var1)))(car (apply-store (get-serial-cell var2))))
+    ;  )))) 
+          ;(length (vector-ref init-store 0))))))
+          ;(eopl:error 'asig-var "Alguna de las variables ya esta determinada" (car (apply-store (get-serial-cell var2))))))))
+      ;(update-store var2)
       ;(if (isFree? (get-serial var1))
       (let ((val (car(apply-store (get-serial-cell var2)))))
          (if (celda? var2)
-             ;(eopl:error 'asig-var "Alguna de las variables ya esta determinada" val))))))
-;             
+                       
 ;;             (eopl:error 'asig-var "Alguna de las variables ya esta determinada"  (get-serial-cell (get-serial var1)))
 ;;             )))))
-         (set-store-cell (get-serial var1) val))))))
+         (set-store-cell (get-serial var1) val)))))))
 ;          (apply-env-env env(car (get-valor var1)) (get-serial-cell var2))))) 
         
 
