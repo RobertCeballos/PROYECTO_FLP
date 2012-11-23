@@ -147,7 +147,7 @@
            (cases program pgm
              (a-program (body)
                         (eval-expression body (init-env))))))
-           (print resultado)
+            resultado
       )))
 
 
@@ -470,14 +470,16 @@
            (serial2(get-serial var2)))
        
       (if (or (isFree2? (get-serial var1)) (isFree2? (get-serial var2)))
-          
           (if (isFree2? (get-serial var1))(set-store (get-serial var1) (create-var (get-serial var2) (car (get-valor var2))))
-              
               (if (isFree2? (get-serial var2))(set-store (get-serial var2) (create-var (get-serial var1) (car (get-valor var1))))))
+          
+          ;Para unificar dos registros
+          (if (and (registro? (car(apply-store (get-last-ref2 (get-serial var1))))) (registro? (car(apply-store (get-last-ref2 (get-serial var2))))))
+              (eval-regs (car(apply-store (get-last-ref2 (get-serial var1))))  (car(apply-store (get-last-ref2 (get-serial var2)))) )
           
               (eopl:error 'asig-var "Alguna de las variables ya esta determinada")
            )
-       )))
+       ))))
 
       
 ;Asignar una variable a un numero
@@ -872,6 +874,48 @@
     (asig-pos-env (length lista) (length(vector-ref init-store 0)) )))
  
 
+
+
+;Funcion que verifica si dos registros se pueden unificar
+(define eval-regs
+  (lambda (reg1 reg2)
+    (cases registro reg1
+      (reg-vacio (etiq1) ())
+      (reg-datos (etiq1 campos1 valores1)
+                 (cases registro reg2
+                   (reg-vacio (etiq2) () )
+                   (reg-datos (etiq2 campos2 valores2) 
+                              (if (and (eval-etiq etiq1 etiq2) (eval-camps campos1 campos2) (eval-camp-and-vals 0 campos1 valores1 campos2 valores2))
+                                  #t #f
+                                  )))))))
+
+;Funcion q verifica q dos etiquetas de un reg sean iguales
+(define eval-etiq
+  (lambda (etiq1 etiq2)
+    (equal? etiq1 etiq2)))
+
+;Funcion que verifica que el los campos de un reg tengan el mismo largo
+(define eval-camps
+  (lambda (camp1 camp2)
+    (equal?  (length camp1) (length camp2))))
+
+;Funcion que determina si los campos del reg1 son iguales a los del reg2 (comparando internamente sus calores asociados)
+(define eval-camp-and-vals
+  (lambda (posCampo camp1 val1 camp2 val2)
+    (if (equal? posCampo (length camp1)) #t
+    (let ((campoActual (list-ref camp1 posCampo)))
+    (let ((pos (rib-find-position campoActual camp2))) ; encuentre al campo1 en campo2
+               (if (equal? pos #f) #f
+                   (let ((serial-maximo-var1 (get-last-ref2 (list-ref (vector-ref val1 0) (rib-find-position campoActual camp1))))
+                         (serial-maximo-var2 (get-last-ref2 (list-ref  (vector-ref val2 0) pos))))
+                     (if (or (equal? (car (apply-store serial-maximo-var1)) (car (apply-store serial-maximo-var2))) 
+                             (or (equal? (car (apply-store serial-maximo-var1)) '_) (equal? (car (apply-store serial-maximo-var2)) '_)))
+                         (eval-camp-and-vals (+ posCampo 1) camp1 val1 camp2 val2)
+                         #f
+                    ))))))))
+      
+      
+
 ;*******************************************************************************************
 ;**********************************FUNCIONES CELDAS**************************************
 (define create-cell
@@ -917,7 +961,10 @@
 
   
 
-(define miRegistro (reg-datos 'miRegistro '(campo1 campo2 campo3) #((_ 2 3))))
+(define miRegistro1 (reg-datos 'miRegistro '(campo1 campo2 campo3) #((_ 2 3))))
+(define miRegistro2 (reg-datos 'miRegistro '(campo1 campo2 campo3) #((_ 2 3))))
+
+
 
 ;(asig-val-cam-reg miRegistro 'campo1 2)
 ;(update-store (create-var (length(vector-ref init-store 0)) miRegistro))
