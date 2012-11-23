@@ -11,7 +11,7 @@
 ;;  <primitive>     ::= 
 
 
-;POSIBLES FUNCIONES A ELIMINAR isFree?,  apply-env-env 
+;POSIBLES FUNCIONES A ELIMINAR isFree?,  apply-env-env, revisar orelse 
 ;******************************************************************************************
 
 ;*******************************ESPECIFICACION LEXICA**********************************
