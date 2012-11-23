@@ -21,6 +21,7 @@
   (atomo  ((or "a" "b" "c" "ch" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "ñ" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" )
           (arbno  (or letter digit ) ))symbol)
           ;( (arbno "'" letter "'") )) ) symbol)
+  (a-variable ("_") symbol)
           
   
   (entero (digit (arbno digit)) string)
@@ -41,7 +42,7 @@
     
     (expression (variable) var-exp)
     
-    (expression ("_") a-var-exp)
+    (expression (a-variable) a-var-exp)
     
     (expression (entero) entero-exp)
     
@@ -200,27 +201,27 @@
              (vals vector?)))
 
 ;**********************************VARIABLES ANONIMAS*********************************
-(define buscar-underscore 
-  (lambda (lista)
-    (cond
-      [(not(equal? "_" (car lista))) #f]
-      [(equal? "_" (car lista)) #t]
-      [(buscar-underscore(cdr lista))])
-    )
-  )
+;(define buscar-underscore 
+ ; (lambda (lista)
+  ;  (cond
+   ;   [(not(equal? "_" (car lista))) #f]
+    ;  [(equal? "_" (car lista)) #t]
+     ; [(buscar-underscore(cdr lista))])
+    ;)
+  ;)
 
-(define poner-underscore
-  (lambda (lista)
-    (if (buscar-underscore lista) lista
-        (append (list "_") lista))))
+;(define poner-underscore
+ ; (lambda (lista)
+  ;  (if (buscar-underscore lista) lista
+   ;     (append (list "_") lista))))
 
 
 ;; funcion que crea una variable anonima poniendo _ en el store
 
-(define create-a-var 
-  (lambda ()
-    (poner-underscore (vector-ref init-store 0))
-    ))
+;(define create-a-var 
+ ; (lambda ()
+  ;  (poner-underscore (vector-ref init-store 0))
+   ; ))
 
 
 
@@ -240,7 +241,7 @@
       (var-exp (id) (let ((serial (apply-env env id)))
                      (create-var serial id)))
       
-      (a-var-exp () create-a-var())
+     ; (a-var-exp () create-a-var())
       
       (list-exp (exps)
                 ())
