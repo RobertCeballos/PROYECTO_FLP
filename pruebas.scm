@@ -149,5 +149,54 @@ set .Rec.campo2 = A
 end
 
 
+local
+Rec1 Rec2 X
+in
+set Rec1 = miregistro(campo1:X campo2:_)
+set Rec2 = miregistro(campo1:X campo2:_)
+set Rec1 = Rec2
+end
+
+
+local
+Rec1 Rec2 X
+in
+set Rec1 = miregistro(campo1:X campo2:_)
+set Rec2 = miregistro(campo2:5 campo3:_ campo1: X)
+set Rec1 = Rec2
+end
+
+local
+Rec1 Rec2 X
+in
+set Rec1 = miregistro(campo1:X campo2:_ campo3:_)
+set Rec2 = miregistro(campo2:5 campo3:_ campo1: X)
+set Rec1 = Rec2
+set .Rec1.campo1 = 45
+.Rec2.campo1
+end
+
+local
+Rec1 Rec2 X Y
+in
+set Rec1 = miregistro(campo1:X campo2:4)
+set Rec2 = miregistro(campo1:5 campo2:Y)
+set Rec1 =  Rec2
+.Rec1.campo1
+end
+
+;OJOOOOO
+local
+Rec1 Rec2 X Y Z
+in
+set Rec1 = miregistro(campo1:X campo2:4)
+set Rec2 = miregistro(campo1:Z campo2:Y)
+set Rec1 =  Rec2 
+set .Rec1.campo1 = 89
+Z
+end
+
+
+
 
 
