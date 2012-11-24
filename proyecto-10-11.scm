@@ -147,7 +147,7 @@
            (cases program pgm
              (a-program (body)
                         (eval-expression body (init-env))))))
-            resultado
+            (print resultado)
       )))
 
 
@@ -475,11 +475,11 @@
           
           ;Para unificar dos registros
           (if (and (registro? (car(apply-store (get-last-ref2 (get-serial var1))))) (registro? (car(apply-store (get-last-ref2 (get-serial var2))))))
-              (eval-regs (car(apply-store (get-last-ref2 (get-serial var1))))  (car(apply-store (get-last-ref2 (get-serial var2)))) )
-          
-              (eopl:error 'asig-var "Alguna de las variables ya esta determinada")
+              (if (equal? (eval-regs (car(apply-store (get-last-ref2 (get-serial var1))))  (car(apply-store (get-last-ref2 (get-serial var2)))) ) #t)
+                  (unif-regs (car(apply-store (get-last-ref2 (get-serial var1)))) (car(apply-store (get-last-ref2 (get-serial var2)))))
+              (eopl:error 'asig-var "No se puede unificar")
            )
-       ))))
+       )))))
 
       
 ;Asignar una variable a un numero
@@ -899,7 +899,7 @@
   (lambda (camp1 camp2)
     (equal?  (length camp1) (length camp2))))
 
-;Funcion que determina si los campos del reg1 son iguales a los del reg2 (comparando internamente sus calores asociados)
+;Funcion que determina si los campos del reg1 son iguales a los del reg2 (comparando internamente sus valores asociados)
 (define eval-camp-and-vals
   (lambda (posCampo camp1 val1 camp2 val2)
     (if (equal? posCampo (length camp1)) #t
@@ -913,6 +913,47 @@
                          (eval-camp-and-vals (+ posCampo 1) camp1 val1 camp2 val2)
                          #f
                     ))))))))
+    
+
+;Funcion que unifica registros
+(define unif-regs
+  (lambda (reg1 reg2)
+    (cases registro reg1
+      (reg-vacio (etiq1) ())
+      (reg-datos (etiq1 campos1 valores1)
+                 (cases registro reg2
+                   (reg-vacio (etiq2) () )
+                   (reg-datos (etiq2 campos2 valores2) 
+                              (unif-camps-reg 0 campos1 valores1 campos2 valores2))
+                                  )))))
+    
+;Funcion q unifica los campos de un registro (ojoooo: antes estaba -> (set-store posCampo2 (create-var posCamp1 campoActual))
+(define unif-camps-reg
+  (lambda (posCampo camp1 val1 camp2 val2)
+    (if (equal? posCampo (length camp1)) #t
+    (let ((campoActual (list-ref camp1 posCampo)))
+    (let ((pos (rib-find-position campoActual camp2))) ; encuentre al campo1 en campo2
+               (if (equal? pos #f) #f
+                   (let ((posCamp1 (list-ref (vector-ref val1 0) (rib-find-position campoActual camp1)))
+                         (posCamp2 (list-ref  (vector-ref val2 0) pos)))
+                   (let ((serial-maximo-var1 (get-last-ref2 posCamp1))
+                         (serial-maximo-var2 (get-last-ref2 posCamp2)))
+                     (if (equal? serial-maximo-var1 serial-maximo-var2)
+                           (unif-camps-reg (+ posCampo 1) camp1 val1 camp2 val2)
+                           (if (and (equal? (car (apply-store serial-maximo-var1)) '_) (equal? (car (apply-store serial-maximo-var2)) '_))
+                               (begin
+                                 (set-store serial-maximo-var2 (create-var posCamp1 campoActual))
+                                 (unif-camps-reg (+ posCampo 1) camp1 val1 camp2 val2))
+                               (if  (and (equal? (car (apply-store serial-maximo-var1)) '_) (not(equal? (car (apply-store serial-maximo-var2)) '_)))
+                                    (begin
+                                      (set-store serial-maximo-var1 (create-var posCamp2 campoActual))
+                                      (unif-camps-reg (+ posCampo 1) camp1 val1 camp2 val2))
+                                    (if  (and (not (equal? (car (apply-store serial-maximo-var1)) '_)) (equal? (car (apply-store serial-maximo-var2)) '_))
+                                         (begin
+                                           (set-store serial-maximo-var2 (create-var posCamp1 campoActual))  
+                                           (unif-camps-reg (+ posCampo 1) camp1 val1 camp2 val2))
+                   
+                    ))))))))))))
       
       
 
