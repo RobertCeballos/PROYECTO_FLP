@@ -21,7 +21,7 @@
   ;(variable ((or "_" "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "Ñ" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z") 
    ;            (arbno (or letter digit "?")) ) symbol)
   (variable ((or "_"(concat (or "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z")
-                           (arbno (or letter digit "_"))))) symbol) 
+                           (arbno (or letter digit "?"))))) symbol) 
   (atomo  ((or "a" "b" "c" "ch" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "ñ" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" )
           (arbno  (or letter digit ) ))symbol)
           ;( (arbno "'" letter "'") )) ) symbol)
@@ -191,8 +191,8 @@
 
 ;definición del tipo de dato celda
  (define-datatype celda celda?
-       (a-cell (val number?)
-               (lis list?))) 
+       (a-cell (val vector?)))
+              
  
  
 ;**********************************REGISTROS*****************************************
@@ -315,10 +315,10 @@
     (cases variable var
       (a-variable (serial valor) serial))))
 
-(define get-serial-cell
-  (lambda (var)
-    (cases celda var
-      (a-cell (serial valor) serial))))
+;(define get-serial-cell
+;  (lambda (var)
+;    (cases celda var
+;      (a-cell (serial valor) serial))))
 
 (define get-valor
   (lambda (var)
@@ -328,7 +328,7 @@
     (define get-valor-cell
      (lambda (var)
         (cases celda var
-         (a-cell (serial valor) serial))))
+         (a-cell (valor) (vector-ref valor 0)))))
  
 (define for-result 0) 
 
@@ -418,10 +418,13 @@
 
 (define asignar
   (lambda (var1 var2 env)
-     (if (or (celda? (eval-expression var1 env)) (celda? (eval-expression var2 env))) (asig-var-cel var1 var2 env)
-;        ;;terminar condicionnnn
-         (let ((var1 (eval-expression var1 env))
+     (let ((var1 (eval-expression var1 env))
                (var2 (eval-expression var2 env)))
+     (if (or (celda? var1) (celda?  var2))
+         ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-valor-cell var2))
+         (asig-var-cel var1 var2 env)
+;        ;;terminar condicionnnn 
+        
              (cond
                ((and (variable? var1) (variable? var2))
                 (cond
@@ -438,15 +441,15 @@
                )))))
                 
        
-
+ 
 
 
 ;Asignar una variable a una celda
 (define asig-var-cel
   (lambda(var1 var2 env)
-    (let ((var1 (eval-expression var1 env))
-          (var2 (eval-expression var2 env)))
-      (update-store var2)
+    ;(let ((var1 (eval-expression var1 env))) 
+         ; (var2 (eval-expression var2 env)))
+     ; (update-store var2)
       (if (isFree? (get-serial var1))
                   ; (save-in-store-cell (list(car (get-valor var1)))(car (apply-store (get-serial-cell var2))))
     ;  )))) 
@@ -459,7 +462,7 @@
                        
 ;;             (eopl:error 'asig-var "Alguna de las variables ya esta determinada"  (get-serial-cell (get-serial var1)))
 ;;             )))))
-         (set-store-cell (get-serial var1) val)))))))
+         (set-store-cell (get-serial var1) val))))))
 ;          (apply-env-env env(car (get-valor var1)) (get-serial-cell var2))))) 
         
 
@@ -605,7 +608,9 @@
           (isfree-prim() (isFree2?(get-serial(car args))))
           (isdet-prim() (not(isFree2?(get-serial(car args)))))
     
-          (newcell-prim() (create-cell (length (vector-ref init-store 0)) (car args)))
+          (newcell-prim() 
+;                       (eopl:error 'apply-primitive "Error: Cantidad de operandos incorrecta" args))
+                       (create-cell args))
                        
 ;                       (let ((cel(create-cell (length (vector-ref init-store 0)) (car args))))
 ;                                    ;(update-store cel)
@@ -804,12 +809,13 @@
                             valor
                             (aux-apply-store serial (cdr lista)))));ojo hasta aqui es de registros
           
-                            (if (celda? (car lista))
-                                (cases celda (car lista)
-                                  (a-cell (serialC valor)
-                                   (if (equal? serialC serial) 
-                            valor  
-                            (aux-apply-store serial (cdr lista))))))))))
+;                            (if (celda? (car lista))
+;                                (cases celda (car lista)
+;                                  (a-cell (svalor)
+;                                   (if (equal? serialC serial) 
+;                            valor  
+;                            (aux-apply-store serial (cdr lista))))))
+                            ))))
 
 
 
@@ -960,8 +966,10 @@
 ;*******************************************************************************************
 ;**********************************FUNCIONES CELDAS**************************************
 (define create-cell
-  (lambda (serial valor)
-    (a-cell serial (list valor))))
+  (lambda (valor)
+    (let ((vector (make-vector 1)))
+      (vector-set! vector 0 valor)
+      (a-cell vector))))
 
 
 
