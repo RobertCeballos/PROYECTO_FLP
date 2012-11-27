@@ -447,22 +447,21 @@
 ;Asignar una variable a una celda
 (define asig-var-cel
   (lambda(var1 var2 env)
-    ;(let ((var1 (eval-expression var1 env))) 
-         ; (var2 (eval-expression var2 env)))
-     ; (update-store var2)
-      (if (isFree? (get-serial var1))
+        (if (isFree? (get-serial var1))
                   ; (save-in-store-cell (list(car (get-valor var1)))(car (apply-store (get-serial-cell var2))))
     ;  )))) 
           ;(length (vector-ref init-store 0))))))
-          ;(eopl:error 'asig-var "Alguna de las variables ya esta determinada" (car (apply-store (get-serial-cell var2))))))))
-      ;(update-store var2)
-      ;(if (isFree? (get-serial var1))
-      (let ((val (car(apply-store (get-serial-cell var2)))))
-         (if (celda? var2)
+          ;(eopl:error 'asig-var "Alguna de las variables ya esta determinada" var2)
+      (update-store (create-var  (length(vector-ref init-store 0))var2 )))
+      (if (isFree? (get-serial var1))
+          ;(eopl:error 'asig-var "Alguna " (get-serial var1))
+;      (let ((val (car(apply-store (get-serial-cell var2)))))
+;         (if (celda? var2)
                        
 ;;             (eopl:error 'asig-var "Alguna de las variables ya esta determinada"  (get-serial-cell (get-serial var1)))
 ;;             )))))
-         (set-store-cell (get-serial var1) val))))))
+         (set-store (get-serial var1) var2)
+         )))
 ;          (apply-env-env env(car (get-valor var1)) (get-serial-cell var2))))) 
         
 
