@@ -452,7 +452,10 @@
     ;  )))) 
           ;(length (vector-ref init-store 0))))))
           ;(eopl:error 'asig-var "Alguna de las variables ya esta determinada" var2)
-      (update-store (create-var  (length(vector-ref init-store 0))var2 )))
+            (let ((varCell
+       (create-var  (length(vector-ref init-store 0))var2 )))
+              (update-store varCell)
+              
       (if (isFree? (get-serial var1))
           ;(eopl:error 'asig-var "Alguna " (get-serial var1))
 ;      (let ((val (car(apply-store (get-serial-cell var2)))))
@@ -460,8 +463,8 @@
                        
 ;;             (eopl:error 'asig-var "Alguna de las variables ya esta determinada"  (get-serial-cell (get-serial var1)))
 ;;             )))))
-         (set-store (get-serial var1) var2)
-         )))
+         (set-store (get-serial var1) varCell)
+         )))))
 ;          (apply-env-env env(car (get-valor var1)) (get-serial-cell var2))))) 
         
 

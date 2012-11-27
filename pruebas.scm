@@ -67,6 +67,35 @@ local {I F}
  end
 end
 
+;Celdas
+local
+Cell
+in
+set Cell = newcell{88}
+end
+
+local
+Cell 
+in
+set Cell = newcell{99}
+@{Cell}
+end
+
+local
+Cell X
+in
+set Cell = newcell{22}
+set X = @{Cell}
+X
+end
+
+local
+Cel1 Cel2
+in
+set Cel1 = newcell{44}
+set Cel2 = Cel1
+@{Cel2}
+end
 
 ;Registros
 local
