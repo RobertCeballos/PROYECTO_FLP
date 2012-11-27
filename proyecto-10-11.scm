@@ -94,7 +94,9 @@
     
     ;Celdas
     (primitive ("newcell") newcell-prim)
+    (primitive ("iscell?") iscell-prim)
     (primitive ("@") valcell-prim)
+    (primitive ("setcell") setcell-prim)
     
     ;Logicas
     (primitive ("orelse") orelse-prim)
@@ -322,13 +324,12 @@
 
 (define get-valor
   (lambda (var)
+    (if(variable? var)
     (cases variable var
-      (a-variable (serial valor) valor)))) 
-
-    (define get-valor-cell
-     (lambda (var)
+      (a-variable (serial valor) valor)) 
+     (if (celda? var)
         (cases celda var
-         (a-cell (valor) (vector-ref valor 0)))))
+         (a-cell (valor) (vector-ref valor 0)))))))
  
 (define for-result 0) 
 
@@ -448,25 +449,12 @@
 (define asig-var-cel
   (lambda(var1 var2 env)
         (if (isFree? (get-serial var1))
-                  ; (save-in-store-cell (list(car (get-valor var1)))(car (apply-store (get-serial-cell var2))))
-    ;  )))) 
-          ;(length (vector-ref init-store 0))))))
-          ;(eopl:error 'asig-var "Alguna de las variables ya esta determinada" var2)
-            (let ((varCell
-       (create-var  (length(vector-ref init-store 0))var2 )))
-              (update-store varCell)
-              
-      (if (isFree? (get-serial var1))
-          ;(eopl:error 'asig-var "Alguna " (get-serial var1))
-;      (let ((val (car(apply-store (get-serial-cell var2)))))
-;         (if (celda? var2)
-                       
-;;             (eopl:error 'asig-var "Alguna de las variables ya esta determinada"  (get-serial-cell (get-serial var1)))
-;;             )))))
-         (set-store (get-serial var1) varCell)
+             (let ((varCell
+                  (create-var  (length(vector-ref init-store 0))var2 )))(update-store varCell)
+                    (if (isFree? (get-serial var1))
+                  (set-store (get-serial var1) varCell)
          )))))
-;          (apply-env-env env(car (get-valor var1)) (get-serial-cell var2))))) 
-        
+;          
 
 ;Asignar una variable a otra variable
 (define asig-var-var
@@ -611,19 +599,31 @@
           (isdet-prim() (not(isFree2?(get-serial(car args)))))
     
           (newcell-prim() 
-;                       (eopl:error 'apply-primitive "Error: Cantidad de operandos incorrecta" args))
                        (create-cell args))
-                       
-;                       (let ((cel(create-cell (length (vector-ref init-store 0)) (car args))))
-;                                    ;(update-store cel)
-;                            ))
-                                               
-          (valcell-prim() 
-                       (if (variable? (car args))
-                              (eopl:error 'apply-primitive "Error: Cantidad de operandos incorrecta" (car args))))
-                          ;    (get-valor (car args)))
-                                                      
-      )))
+                                          (valcell-prim() 
+                       (let((val
+                       (car (apply-store(get-last-ref2 (get-serial (car args)))))))
+                         (if (celda? val)
+                             (if (list? (get-valor val))
+                             (car(get-valor val))
+                             (get-valor val))
+                             (eopl:error 'apply-primitive "No es una variable de tipo celda ~s" args ))))
+          
+          (iscell-prim()
+                      (let((val
+                       (car (apply-store(get-last-ref2 (get-serial (car args)))))))
+                         (if (celda? val)
+                             #t
+                             #f)))
+          
+          (setcell-prim()
+                       (let((val
+                       (get-last-ref2 (get-serial (car args)))))
+                         (let((cel(create-cell (car(cdr args)))))
+                           (set-store val cel)
+                         )))
+          
+      ))) 
  
     
 ;*******************************************************************************************

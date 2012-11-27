@@ -97,6 +97,19 @@ set Cel2 = Cel1
 @{Cel2}
 end
 
+local Cell 
+in
+set Cell = newcell{44}
+iscell?{Cell}
+end
+
+local Cell
+in
+set Cell=newcell{44}
+setcell{Cell 88}
+@{Cell}
+end
+
 ;Registros
 local
 X
