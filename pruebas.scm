@@ -110,6 +110,20 @@ setcell{Cell 88}
 @{Cell}
 end
 
+;;;;;;;;;;;;;;CICLOS;;;;;;;;;;;;;;;
+
+local X Cell
+Ini Fin
+in
+set Ini=1
+set Fin=9
+set Cell=newcell{0}
+for Y in  Ini .. Fin do
+setcell{Cell +{@{Cell} Y}}
+end
+@{Cell}
+end
+
 ;Registros
 local
 X
