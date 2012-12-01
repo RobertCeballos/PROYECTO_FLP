@@ -98,6 +98,12 @@
     (primitive ("@") valcell-prim)
     (primitive ("setcell") setcell-prim)
     
+    ;puertos
+    (primitive ("newport") newport-prim)
+    ;(primitive ("isport?") isport-prim)
+    ;(primitive ("send") senport-prim)
+    
+    
     ;Logicas
     (primitive ("orelse") orelse-prim)
     (primitive ("andthen") andthen-prim)
@@ -189,12 +195,21 @@
    (env environment?)))
 
 
+
 ;**********************************CELDAS********************************************
 
 ;definición del tipo de dato celda
  (define-datatype celda celda?
        (a-cell (val vector?)))
               
+ 
+ 
+ ;**********************************PUERTOS********************************************
+
+;definición del tipo de dato puerto
+ (define-datatype puerto puerto?
+       (a-port (val vector?)))
+ 
  
  
 ;**********************************REGISTROS*****************************************
@@ -424,6 +439,8 @@
      (if (or (celda? var1) (celda?  var2))
          ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-valor-cell var2))
          (asig-var-cel var1 var2 env)
+         (if (or (puerto? var1)(puerto? var2))
+             (eopl:error 'apply-primitive "noooooooooo ~s"  var2)
 ;        ;;terminar condicionnnn 
         
              (cond
@@ -439,7 +456,7 @@
                   )) 
                ((or(number?  var1) (number? var2)) (asig-var-num var1 var2));variable-numero o numero-variable
                ((and (symbol? (car (get-valor var1))) (registro?  var2))(asig-var-reg var1 var2 env))
-               )))))
+               ))))))
                 
        
  
@@ -609,7 +626,7 @@
                              (get-valor val))
                              (eopl:error 'apply-primitive "No es una variable de tipo celda ~s" args ))))
           
-          (iscell-prim()
+          (iscell-prim() 
                       (let((val
                        (car (apply-store(get-last-ref2 (get-serial (car args)))))))
                          (if (celda? val)
@@ -622,6 +639,9 @@
                          (let((cel(create-cell (car(cdr args)))))
                            (set-store val cel)
                          )))
+          
+          (newport-prim() 
+                       (create-port args))
           
       ))) 
  
@@ -972,6 +992,14 @@
     (let ((vector (make-vector 1)))
       (vector-set! vector 0 valor)
       (a-cell vector))))
+
+;************celdas
+  
+(define create-port
+  (lambda (valor)
+    (let ((vector (make-vector 1)))
+      (vector-set! vector 0 valor)
+      (a-port vector))))
 
 
 
