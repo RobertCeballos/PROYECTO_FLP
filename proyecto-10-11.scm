@@ -843,7 +843,7 @@
 
 ;*******************************************************************************************
 ;**********************************FUNCIONES REGISTROS**************************************
-;Funcion crear registro
+;Funcion crear registro (al crear un reg los campos tambien pueden ser reg)
 (define create-reg
   (lambda (etiq camp val env)
     (let ((vector-seriales (make-vector 1))
