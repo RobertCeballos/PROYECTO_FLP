@@ -58,7 +58,7 @@ set Z=*{X Y}
 Z
 end
 
-local {I F}
+local I F
  in
   set I =1
   set F =9
@@ -258,7 +258,64 @@ set .Rec1.campo1 = 89
 Z
 end
 
+ 
+local Rec1 Rec2 Rec3
+in 
+set Rec1 = miRegInterno(campo1:miReg(campo1:50 campo2:40) campo2:3)
+set Rec2 = .Rec1.campo1
+Rec2
+end
+ 
+ 
+local Rec1 Rec2 Rec3
+in 
+set Rec1 = miRegInterno(campo1:miReg(campo1:_ campo2:40) campo2:3)
+set Rec2 = .Rec1.campo1
+set .Rec2.campo1 = 78
+.Rec2.campo1
+end
+ 
+local Rec1 Rec2 Rec3 X
+in 
+set Rec1 = miReg(campo1:miRegInterno(camp1:X camp2:_) campo2:3)
+set Rec2 = .Rec1.campo1  
+set .Rec2.camp1 = 56
+X
+end
+ 
+ 
+local Rec1 Rec2 Rec3
+in 
+set Rec3 = miReg(campo1:_ campo2: _)
+set Rec1 = miRegInterno(campo1:Rec3 campo2:3)
+set Rec2 = .Rec1.campo1
+set .Rec2.campo1 = 78
+.Rec3.campo1
+end
 
+;REGISTROS-CELDAS
+local
+Cell X Rec Y
+in
+set Cell = newcell{22}
+set Rec = miRegistro(campo1: 2 campo2:Cell)
+set X = .Rec.campo2
+set Y =@{X} 
+Y
+end
 
+local X Cell Rec
+Ini Fin
+in
+set Ini=1
+set Fin=9
+set Cell=newcell{0}
+set Rec = miReg(camp1:Cell camp2:3)
+for Y in  Ini .. Fin do
+setcell{Cell +{@{Cell} Y}}
 
+end
+set X =.Rec.camp1
+@{X}
+end
 

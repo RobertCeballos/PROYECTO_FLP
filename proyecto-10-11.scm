@@ -844,12 +844,18 @@
 
 ;*******************************************************************************************
 ;**********************************FUNCIONES REGISTROS**************************************
-;Funcion crear registro
+;Funcion crear registro (al crear un reg los campos tambien pueden ser reg)
 (define create-reg
   (lambda (etiq camp val env)
     (let ((vector-seriales (make-vector 1))
           (val-in-store(map (lambda (x) (let ((evalExp(eval-expression x env)))
-                                          (update-store2 (create-var  (length(vector-ref init-store 0))evalExp )))) val)))
+                                          (if (registro? evalExp)
+                                              (cases registro evalExp
+                                                (reg-vacio (etiq) ())
+                                                (reg-datos (etiq2 camp2 val2)(create-reg etiq2 camp2 (vector-ref val2 0) env))) 
+                                                           (update-store2 (create-var  (length(vector-ref init-store 0))evalExp )))))
+                            
+                            val)))
       (let ((listSeriales (map (lambda (x) (get-serial x)) val-in-store)))
       (vector-set! vector-seriales 0 listSeriales)
       
