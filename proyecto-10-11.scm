@@ -52,9 +52,10 @@
     
     (expression (flotante) flotante-exp)
     
-    (expression ("local"  (arbno variable) "in" cuerpo "end") local-exp)
     
     (expression (primitive "{" (arbno expression)"}") primapp-exp)
+    
+    (expression ("local"  (arbno variable) "in" cuerpo "end") local-exp)
     
 ;    (expression ( "{" primitive (arbno expression)"}")
 ;                primcell-exp)
@@ -65,7 +66,7 @@
     
     (expression ("for" (arbno variable) "in" expression ".." expression
                        "do" cuerpo "end") for-exp)
-    
+     
     (expression ("[" (arbno expression) "]")list-exp)
     
     (expression (atomo "(" (arbno atomo ":" expression) ")") record-exp)

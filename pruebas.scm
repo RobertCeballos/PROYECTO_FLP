@@ -110,6 +110,12 @@ setcell{Cell 88}
 @{Cell}
 end
 
+local X Cell in
+set Cell=newcell{44}
+set X = +{@{Cell} @{Cell}}
+X
+end
+
 ;;;;;;;;;;;;;;CICLOS;;;;;;;;;;;;;;;
 
 local X Cell
