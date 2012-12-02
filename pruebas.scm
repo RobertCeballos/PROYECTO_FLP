@@ -67,6 +67,62 @@ local {I F}
  end
 end
 
+;Celdas
+local
+Cell
+in
+set Cell = newcell{88}
+end
+
+local
+Cell 
+in
+set Cell = newcell{99}
+@{Cell}
+end
+
+local
+Cell X
+in
+set Cell = newcell{22}
+set X = @{Cell}
+X
+end
+
+local
+Cel1 Cel2
+in
+set Cel1 = newcell{44}
+set Cel2 = Cel1
+@{Cel2}
+end
+
+local Cell 
+in
+set Cell = newcell{44}
+iscell?{Cell}
+end
+
+local Cell
+in
+set Cell=newcell{44}
+setcell{Cell 88}
+@{Cell}
+end
+
+;;;;;;;;;;;;;;CICLOS;;;;;;;;;;;;;;;
+
+local X Cell
+Ini Fin
+in
+set Ini=1
+set Fin=9
+set Cell=newcell{0}
+for Y in  Ini .. Fin do
+setcell{Cell +{@{Cell} Y}}
+end
+@{Cell}
+end
 
 ;Registros
 local

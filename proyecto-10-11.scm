@@ -21,7 +21,7 @@
   ;(variable ((or "_" "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "Ñ" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z") 
    ;            (arbno (or letter digit "?")) ) symbol)
   (variable ((or "_"(concat (or "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z")
-                           (arbno (or letter digit "_"))))) symbol) 
+                           (arbno (or letter digit "?"))))) symbol) 
   (atomo  ((or "a" "b" "c" "ch" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "ñ" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" )
           (arbno  (or letter digit ) ))symbol)
           ;( (arbno "'" letter "'") )) ) symbol)
@@ -94,7 +94,15 @@
     
     ;Celdas
     (primitive ("newcell") newcell-prim)
+    (primitive ("iscell?") iscell-prim)
     (primitive ("@") valcell-prim)
+    (primitive ("setcell") setcell-prim)
+    
+    ;puertos
+    (primitive ("newport") newport-prim)
+    ;(primitive ("isport?") isport-prim)
+    ;(primitive ("send") senport-prim)
+    
     
     ;Logicas
     (primitive ("orelse") orelse-prim)
@@ -187,12 +195,21 @@
    (env environment?)))
 
 
+
 ;**********************************CELDAS********************************************
 
 ;definición del tipo de dato celda
  (define-datatype celda celda?
-       (a-cell (val number?)
-               (lis list?))) 
+       (a-cell (val vector?)))
+              
+ 
+ 
+ ;**********************************PUERTOS********************************************
+
+;definición del tipo de dato puerto
+ (define-datatype puerto puerto?
+       (a-port (val vector?)))
+ 
  
  
 ;**********************************REGISTROS*****************************************
@@ -315,20 +332,19 @@
     (cases variable var
       (a-variable (serial valor) serial))))
 
-(define get-serial-cell
-  (lambda (var)
-    (cases celda var
-      (a-cell (serial valor) serial))))
+;(define get-serial-cell
+;  (lambda (var)
+;    (cases celda var
+;      (a-cell (serial valor) serial))))
 
 (define get-valor
   (lambda (var)
+    (if(variable? var)
     (cases variable var
-      (a-variable (serial valor) valor)))) 
-
-    (define get-valor-cell
-     (lambda (var)
+      (a-variable (serial valor) valor)) 
+     (if (celda? var)
         (cases celda var
-         (a-cell (serial valor) serial))))
+         (a-cell (valor) (vector-ref valor 0)))))))
  
 (define for-result 0) 
 
@@ -418,10 +434,15 @@
 
 (define asignar
   (lambda (var1 var2 env)
-     (if (or (celda? (eval-expression var1 env)) (celda? (eval-expression var2 env))) (asig-var-cel var1 var2 env)
-;        ;;terminar condicionnnn
-         (let ((var1 (eval-expression var1 env))
+     (let ((var1 (eval-expression var1 env))
                (var2 (eval-expression var2 env)))
+     (if (or (celda? var1) (celda?  var2))
+         ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-valor-cell var2))
+         (asig-var-cel var1 var2 env)
+         (if (or (puerto? var1)(puerto? var2))
+             (eopl:error 'apply-primitive "noooooooooo ~s"  var2)
+;        ;;terminar condicionnnn 
+        
              (cond
                ((and (variable? var1) (variable? var2))
                 (cond
@@ -435,33 +456,22 @@
                   )) 
                ((or(number?  var1) (number? var2)) (asig-var-num var1 var2));variable-numero o numero-variable
                ((and (symbol? (car (get-valor var1))) (registro?  var2))(asig-var-reg var1 var2 env))
-               )))))
+               ))))))
                 
        
-
+ 
 
 
 ;Asignar una variable a una celda
 (define asig-var-cel
   (lambda(var1 var2 env)
-    (let ((var1 (eval-expression var1 env))
-          (var2 (eval-expression var2 env)))
-      (update-store var2)
-      (if (isFree? (get-serial var1))
-                  ; (save-in-store-cell (list(car (get-valor var1)))(car (apply-store (get-serial-cell var2))))
-    ;  )))) 
-          ;(length (vector-ref init-store 0))))))
-          ;(eopl:error 'asig-var "Alguna de las variables ya esta determinada" (car (apply-store (get-serial-cell var2))))))))
-      ;(update-store var2)
-      ;(if (isFree? (get-serial var1))
-      (let ((val (car(apply-store (get-serial-cell var2)))))
-         (if (celda? var2)
-                       
-;;             (eopl:error 'asig-var "Alguna de las variables ya esta determinada"  (get-serial-cell (get-serial var1)))
-;;             )))))
-         (set-store-cell (get-serial var1) val)))))))
-;          (apply-env-env env(car (get-valor var1)) (get-serial-cell var2))))) 
-        
+        (if (isFree? (get-serial var1))
+             (let ((varCell
+                  (create-var  (length(vector-ref init-store 0))var2 )))(update-store varCell)
+                    (if (isFree? (get-serial var1))
+                  (set-store (get-serial var1) varCell)
+         )))))
+;          
 
 ;Asignar una variable a otra variable
 (define asig-var-var
@@ -605,18 +615,35 @@
           (isfree-prim() (isFree2?(get-serial(car args))))
           (isdet-prim() (not(isFree2?(get-serial(car args)))))
     
-          (newcell-prim() (create-cell (length (vector-ref init-store 0)) (car args)))
-                       
-;                       (let ((cel(create-cell (length (vector-ref init-store 0)) (car args))))
-;                                    ;(update-store cel)
-;                            ))
-                                               
-          (valcell-prim() 
-                       (if (variable? (car args))
-                              (eopl:error 'apply-primitive "Error: Cantidad de operandos incorrecta" (car args))))
-                          ;    (get-valor (car args)))
-                                                      
-      )))
+          (newcell-prim() 
+                       (create-cell args))
+                                          (valcell-prim() 
+                       (let((val
+                       (car (apply-store(get-last-ref2 (get-serial (car args)))))))
+                         (if (celda? val)
+                             (if (list? (get-valor val))
+                             (car(get-valor val))
+                             (get-valor val))
+                             (eopl:error 'apply-primitive "No es una variable de tipo celda ~s" args ))))
+          
+          (iscell-prim() 
+                      (let((val
+                       (car (apply-store(get-last-ref2 (get-serial (car args)))))))
+                         (if (celda? val)
+                             #t
+                             #f)))
+          
+          (setcell-prim()
+                       (let((val
+                       (get-last-ref2 (get-serial (car args)))))
+                         (let((cel(create-cell (car(cdr args)))))
+                           (set-store val cel)
+                         )))
+          
+          (newport-prim() 
+                       (create-port args))
+          
+      ))) 
  
     
 ;*******************************************************************************************
@@ -804,12 +831,13 @@
                             valor
                             (aux-apply-store serial (cdr lista)))));ojo hasta aqui es de registros
           
-                            (if (celda? (car lista))
-                                (cases celda (car lista)
-                                  (a-cell (serialC valor)
-                                   (if (equal? serialC serial) 
-                            valor  
-                            (aux-apply-store serial (cdr lista))))))))))
+;                            (if (celda? (car lista))
+;                                (cases celda (car lista)
+;                                  (a-cell (svalor)
+;                                   (if (equal? serialC serial) 
+;                            valor  
+;                            (aux-apply-store serial (cdr lista))))))
+                            ))))
 
 
 
@@ -966,8 +994,18 @@
 ;*******************************************************************************************
 ;**********************************FUNCIONES CELDAS**************************************
 (define create-cell
-  (lambda (serial valor)
-    (a-cell serial (list valor))))
+  (lambda (valor)
+    (let ((vector (make-vector 1)))
+      (vector-set! vector 0 valor)
+      (a-cell vector))))
+
+;************celdas
+  
+(define create-port
+  (lambda (valor)
+    (let ((vector (make-vector 1)))
+      (vector-set! vector 0 valor)
+      (a-port vector))))
 
 
 
