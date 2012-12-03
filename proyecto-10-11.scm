@@ -438,10 +438,10 @@
      (let ((var1 (eval-expression var1 env))
                (var2 (eval-expression var2 env)))
      (if (or (celda? var1) (celda?  var2))
-         ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-valor-cell var2))
+         ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-valor var2))
          (asig-var-cel var1 var2 env)
          (if (or (puerto? var1)(puerto? var2))
-             (eopl:error 'apply-primitive "noooooooooo ~s"  var2)
+             (asig-var-port var1 var2 env)
 ;        ;;terminar condicionnnn 
         
              (cond
@@ -458,6 +458,19 @@
                ((or(number?  var1) (number? var2)) (asig-var-num var1 var2));variable-numero o numero-variable
                ((and (symbol? (car (get-valor var1))) (registro?  var2))(asig-var-reg var1 var2 env))
                ))))))
+
+;asignar una variable a un puerto
+(define asig-var-port
+  (lambda(var1 var2 env)
+   
+     (if (isFree? (get-serial  var1))
+         (set-store (get-serial var1) var2))))
+         ;(eopl:error 'apply-primitive "noooooooooo ~s"  (length(vector-ref init-store 0))))))
+;        (let ((varPort 
+;               (create-var (length(vector-ref init-store 0))var2)))
+;          (if (#t)
+;          (eopl:error 'apply-primitive "noooooooooo ~s"  (length(vector-ref init-store 0))))))))
+;          ;(update-store varPort)))))
                 
        
  
@@ -618,7 +631,8 @@
     
           (newcell-prim() 
                        (create-cell args))
-                                          (valcell-prim() 
+          
+          (valcell-prim() 
                        (let((val
                        (car (apply-store(get-last-ref2 (get-serial (car args)))))))
                          (if (celda? val)
@@ -642,6 +656,16 @@
                          )))
           
           (newport-prim() 
+                       (let ((port
+                       (create-port args)))
+                         (let 
+                             ((varPort
+                  (create-var  (length(vector-ref init-store 0))port )))
+                         (update-store varPort)
+                         
+                         (if (variable? (car args))
+                             ;(eopl:error 'apply-primitive "noooooooooo ~s"  (length(vector-ref init-store 0))))))
+                         (set-store (get-serial (car args)) varPort))))
                        (create-port args))
           
       ))) 
