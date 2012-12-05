@@ -101,8 +101,8 @@
     
     ;puertos
     (primitive ("newport") newport-prim)
-    ;(primitive ("isport?") isport-prim)
-    ;(primitive ("send") senport-prim)
+    (primitive ("isport?") isport-prim)
+    (primitive ("send") sendP-prim)
     
     
     ;Logicas
@@ -345,7 +345,10 @@
       (a-variable (serial valor) valor)) 
      (if (celda? var)
         (cases celda var
-         (a-cell (valor) (vector-ref valor 0)))))))
+         (a-cell (valor) (vector-ref valor 0)))
+        (if (puerto? var)
+            (cases puerto var
+              (a-port(valor)(vector-ref valor 0))))))))
  
 (define for-result 0) 
 
@@ -458,23 +461,20 @@
                ((or(number?  var1) (number? var2)) (asig-var-num var1 var2));variable-numero o numero-variable
                ((and (symbol? (car (get-valor var1))) (registro?  var2))(asig-var-reg var1 var2 env))
                ))))))
-
+ 
 ;asignar una variable a un puerto
 (define asig-var-port
   (lambda(var1 var2 env)
-   
+    (if (isFree? (get-serial var1))
+   (let ((varPort   
+          (create-var (get-valor var2) var2)))
      (if (isFree? (get-serial  var1))
-         (set-store (get-serial var1) var2))))
-         ;(eopl:error 'apply-primitive "noooooooooo ~s"  (length(vector-ref init-store 0))))))
-;        (let ((varPort 
-;               (create-var (length(vector-ref init-store 0))var2)))
-;          (if (#t)
-;          (eopl:error 'apply-primitive "noooooooooo ~s"  (length(vector-ref init-store 0))))))))
-;          ;(update-store varPort)))))
-                
-       
- 
-
+         ;(eopl:error 'apply-primitive "noooooooooo ~s" (get-serial var1))))))
+         (set-store (get-serial var1) varPort)))
+   (eopl:error 'asig-var-port "La variable ya esta ligada ~s" var1))))
+    
+         
+        
 
 ;Asignar una variable a una celda
 (define asig-var-cel
@@ -610,7 +610,7 @@
                           (if (equal?  (verificarTipoNumero (car args) (cdr args)) #f) (eopl:error 'apply-primitive "Error: Numeros de diferente tipo")
                           (if (null? (cdr args))  (eopl:error 'apply-primitive "Error Cantidad de operandos incorrecta")
                                  (operar * args 1)))))
-          
+           
           (div-prim ()  (let((args (to-number  args)))
                           (if (equal?  (verificarTipoNumero (car args) (cdr args)) #f) (eopl:error 'apply-primitive "Error: Numeros de diferente tipo")
                           (if (= 0 (cadr args)) (eopl:error 'apply-primitive "Error Division por 0")
@@ -658,15 +658,40 @@
           (newport-prim() 
                        (let ((port
                        (create-port args)))
-                         (let 
-                             ((varPort
+                           (let ((varPort
                   (create-var  (length(vector-ref init-store 0))port )))
                          (update-store varPort)
-                         
                          (if (variable? (car args))
-                             ;(eopl:error 'apply-primitive "noooooooooo ~s"  (length(vector-ref init-store 0))))))
-                         (set-store (get-serial (car args)) varPort))))
-                       (create-port args))
+                          (set-store (get-serial (car args)) varPort))
+                      (create-port (get-serial varPort)))))
+          
+          
+          (isport-prim() 
+                      (let((val
+                       (car (apply-store(get-last-ref2 (get-serial (car args)))))))
+                         (if (puerto? val)
+                             #t
+                             #f)))
+          
+          (sendP-prim()
+                     (let((val
+                       (car (apply-store(get-last-ref2 (get-serial (car args)))))))
+                         (if (puerto? val)
+                             (let ((pos
+                                    (get-last-ref2 (get-serial (car args)))))
+                               (if (number? (get-valor val))
+                                    ;(let((vals
+                                         ; (cons (get-valor val)(car(cdr args)))))
+                                      ;(if (puerto? val)
+                                   (eopl:error 'apply-primitive "noooooooooo ~s"  (get-valor val))
+                             (let ((port
+                       (create-port (car(cdr args)))))
+                               
+                             (set-store pos port)))))))
+                             
+                             ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-last-ref2 (get-serial (car args))))
+                             ;(eopl:error 'apply-primitive "noooooooooo ~s"  (car(cdr args)))
+                     
           
       ))) 
  
