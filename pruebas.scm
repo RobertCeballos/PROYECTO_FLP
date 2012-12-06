@@ -130,6 +130,22 @@ end
 @{Cell}
 end
 
+;;;;;;;;;;;;;;;PUERTO;;;;;;;;;;;;;
+
+local Y X P
+in
+set P = newport{X}
+set Y = P
+isport?{Y}
+end
+
+local X P
+in
+set P=newport{X}
+send{P 33}
+send{P 22}    
+end
+
 ;Registros
 local
 X

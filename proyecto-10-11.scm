@@ -679,21 +679,48 @@
                          (if (puerto? val)
                              (let ((pos
                                     (get-last-ref2 (get-serial (car args)))))
-                               (if (number? (get-valor val))
-                                    ;(let((vals
-                                         ; (cons (get-valor val)(car(cdr args)))))
+                               (let ((vecP (make-vector 1)))
+                                   (vector-set! vecP 0 (car(cdr args))) 
+                               (if (vector? (get-valor val))
+                                   
+                                   ;(eopl:error 'apply-primitive "noooooooooo ~s"  444)
+                                    (let ((vals(vector-append (get-valor val) vecP)))
+                                      (let ((portVec
+                       (create-port vals)))
+                                 
+                             (set-store pos portVec)))
+                                      ;vals)
                                       ;(if (puerto? val)
-                                   (eopl:error 'apply-primitive "noooooooooo ~s"  (get-valor val))
-                             (let ((port
-                       (create-port (car(cdr args)))))
-                               
-                             (set-store pos port)))))))
+                                   ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-valor val)) 
+                             
+;                               (if (vector? vecP)
+;                                   (eopl:error 'apply-primitive "noooooooooo ~s"  44444)
+                               (let ((portVec
+                       (create-port vecP)))
+                                 
+                             (set-store pos portVec))))))))
                              
                              ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-last-ref2 (get-serial (car args))))
                              ;(eopl:error 'apply-primitive "noooooooooo ~s"  (car(cdr args)))
                      
           
-      ))) 
+      )))
+
+
+(define vector-append
+  (lambda vecs
+    (let* ((len (apply + (map vector-length vecs)))
+           (result (make-vector len)))
+      (let loop ((result-index 0)
+                 (source-index 0)
+                 (rest-of-vecs vecs))
+        (cond ((null? rest-of-vecs) result)
+              ((= source-index (vector-length (car rest-of-vecs)))
+               (loop result-index 0 (cdr rest-of-vecs)))
+              (else
+               (vector-set! result result-index
+                            (vector-ref (car rest-of-vecs) source-index))
+               (loop (+ result-index 1) (+ source-index 1) rest-of-vecs)))))))
  
     
 ;*******************************************************************************************
