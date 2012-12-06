@@ -104,7 +104,7 @@
     (primitive ("newport") newport-prim)
     (primitive ("isport?") isport-prim)
     (primitive ("send") sendP-prim)
-    
+    (primitive (",") valport-prim)
     
     ;Logicas
     (primitive ("orelse") orelse-prim)
@@ -649,6 +649,7 @@
                              #t
                              #f)))
           
+          
           (setcell-prim()
                        (let((val
                        (get-last-ref2 (get-serial (car args)))))
@@ -656,15 +657,28 @@
                            (set-store val cel)
                          )))
           
+          
           (newport-prim() 
                        (let ((port
                        (create-port args)))
+                         (let ((var
+                                (create-var (get-serial (car args)) (get-serial (car args)))))
                            (let ((varPort
                   (create-var  (length(vector-ref init-store 0))port )))
                          (update-store varPort)
                          (if (variable? (car args))
-                          (set-store (get-serial (car args)) varPort))
-                      (create-port (get-serial varPort)))))
+                          (set-store (get-serial (car args)) port))
+                      (create-port (get-serial varPort))))))
+          
+           (valport-prim() 
+                       (let((val
+                       (car (apply-store(get-last-ref2 (get-serial (car args)))))))
+                         (if (puerto? val)
+                             (if (list? (get-valor val))
+                             (car(get-valor val))
+                             (get-valor val))
+                             (eopl:error 'apply-primitive "No es una variable de tipo celda ~s" args ))))
+          
           
           
           (isport-prim() 
@@ -673,6 +687,7 @@
                          (if (puerto? val)
                              #t
                              #f)))
+          
           
           (sendP-prim()
                      (let((val
