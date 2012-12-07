@@ -451,7 +451,7 @@
              (cond
                ((and (variable? var1) (variable? var2))
                 (cond
-                  ((and (symbol? (car (get-valor var1))) (registro? (car (get-valor var2)))(asig-var-reg var1 var2 env))) ;variable-registro
+                  ((and (symbol? (car (get-valor var1))) (registro? (car (get-valor var2)))(asig-var-reg var1 var2 env))) ;variable-registro (aqui no llega)
                   ((or (and (symbol? (car (get-valor var1))) (symbol? (car (get-valor var2)))) ; variable-variable
                        (and (number? (car (get-valor var1))) (symbol? (car (get-valor var2)))) ;campoReg-var
                        (and (symbol? (car (get-valor var1))) (number? (car (get-valor var2)))) ;var-campoReg
@@ -460,7 +460,8 @@
                   
                   )) 
                ((or(number?  var1) (number? var2)) (asig-var-num var1 var2));variable-numero o numero-variable
-               ((and (symbol? (car (get-valor var1))) (registro?  var2))(asig-var-reg var1 var2 env))
+               ((and (registro?  var1) (symbol? (car (get-valor var2))) )(asig-var-reg var2 var1 env)) ; registro-variable
+               ((and (symbol? (car (get-valor var1))) (registro?  var2))(asig-var-reg var1 var2 env)) ; variable-registro
                ))))))
  
 ;asignar una variable a un puerto
@@ -1038,8 +1039,10 @@
                      (if (or (equal? (car (apply-store serial-maximo-var1)) (car (apply-store serial-maximo-var2))) 
                              (or (equal? (car (apply-store serial-maximo-var1)) '_) (equal? (car (apply-store serial-maximo-var2)) '_)))
                          (eval-camp-and-vals (+ posCampo 1) camp1 val1 camp2 val2)
+                         (if (and (registro? (car (apply-store serial-maximo-var1))) (registro? (car (apply-store serial-maximo-var2))) )
+                             (eval-regs (car (apply-store serial-maximo-var1))  (car (apply-store serial-maximo-var2)))
                          #f
-                    ))))))))
+                    )))))))))
     
 
 ;Funcion que unifica registros
@@ -1079,8 +1082,13 @@
                                          (begin
                                            (set-store serial-maximo-var2 (create-var posCamp1 campoActual))  
                                            (unif-camps-reg (+ posCampo 1) camp1 val1 camp2 val2))
+                                         (if  (and (registro? (car (apply-store serial-maximo-var1))) (registro? (car (apply-store serial-maximo-var2))))
+                                              (begin
+                                                (set-store serial-maximo-var1 (create-var posCamp2 campoActual))
+                                                (unif-camps-reg (+ posCampo 1) camp1 val1 camp2 val2))
+                                             
                    
-                    ))))))))))))
+                    )))))))))))))
       
       
 
