@@ -52,9 +52,10 @@
     
     (expression (flotante) flotante-exp)
     
-    (expression ("local"  (arbno variable) "in" cuerpo "end") local-exp)
     
     (expression (primitive "{" (arbno expression)"}") primapp-exp)
+    
+    (expression ("local"  (arbno variable) "in" cuerpo "end") local-exp)
     
 ;    (expression ( "{" primitive (arbno expression)"}")
 ;                primcell-exp)
@@ -65,12 +66,13 @@
     
     (expression ("for" (arbno variable) "in" expression ".." expression
                        "do" cuerpo "end") for-exp)
-    
+     
     (expression ("[" (arbno expression) "]")list-exp)
     
     (expression (atomo "(" (arbno atomo ":" expression) ")") record-exp)
     
     (expression ("." variable "." atomo) acc-camp-reg)
+    
     
     
     ;BOOLEANOS
@@ -100,9 +102,9 @@
     
     ;puertos
     (primitive ("newport") newport-prim)
-    ;(primitive ("isport?") isport-prim)
-    ;(primitive ("send") senport-prim)
-    
+    (primitive ("isport?") isport-prim)
+    (primitive ("send") sendP-prim)
+    (primitive (",") valport-prim)
     
     ;Logicas
     (primitive ("orelse") orelse-prim)
@@ -344,7 +346,10 @@
       (a-variable (serial valor) valor)) 
      (if (celda? var)
         (cases celda var
-         (a-cell (valor) (vector-ref valor 0)))))))
+         (a-cell (valor) (vector-ref valor 0)))
+        (if (puerto? var)
+            (cases puerto var
+              (a-port(valor)(vector-ref valor 0))))))))
  
 (define for-result 0) 
 
@@ -437,10 +442,10 @@
      (let ((var1 (eval-expression var1 env))
                (var2 (eval-expression var2 env)))
      (if (or (celda? var1) (celda?  var2))
-         ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-valor-cell var2))
+         ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-valor var2))
          (asig-var-cel var1 var2 env)
          (if (or (puerto? var1)(puerto? var2))
-             (eopl:error 'apply-primitive "noooooooooo ~s"  var2)
+             (asig-var-port var1 var2 env)
 ;        ;;terminar condicionnnn 
         
              (cond
@@ -457,10 +462,20 @@
                ((or(number?  var1) (number? var2)) (asig-var-num var1 var2));variable-numero o numero-variable
                ((and (symbol? (car (get-valor var1))) (registro?  var2))(asig-var-reg var1 var2 env))
                ))))))
-                
-       
  
-
+;asignar una variable a un puerto
+(define asig-var-port
+  (lambda(var1 var2 env)
+    (if (isFree? (get-serial var1))
+   (let ((varPort   
+          (create-var (get-valor var2) var2)))
+     (if (isFree? (get-serial  var1))
+         ;(eopl:error 'apply-primitive "noooooooooo ~s" (get-serial var1))))))
+         (set-store (get-serial var1) varPort)))
+   (eopl:error 'asig-var-port "La variable ya esta ligada ~s" var1))))
+    
+         
+        
 
 ;Asignar una variable a una celda
 (define asig-var-cel
@@ -596,7 +611,7 @@
                           (if (equal?  (verificarTipoNumero (car args) (cdr args)) #f) (eopl:error 'apply-primitive "Error: Numeros de diferente tipo")
                           (if (null? (cdr args))  (eopl:error 'apply-primitive "Error Cantidad de operandos incorrecta")
                                  (operar * args 1)))))
-          
+           
           (div-prim ()  (let((args (to-number  args)))
                           (if (equal?  (verificarTipoNumero (car args) (cdr args)) #f) (eopl:error 'apply-primitive "Error: Numeros de diferente tipo")
                           (if (= 0 (cadr args)) (eopl:error 'apply-primitive "Error Division por 0")
@@ -617,7 +632,8 @@
     
           (newcell-prim() 
                        (create-cell args))
-                                          (valcell-prim() 
+          
+          (valcell-prim() 
                        (let((val
                        (car (apply-store(get-last-ref2 (get-serial (car args)))))))
                          (if (celda? val)
@@ -633,6 +649,7 @@
                              #t
                              #f)))
           
+          
           (setcell-prim()
                        (let((val
                        (get-last-ref2 (get-serial (car args)))))
@@ -640,10 +657,86 @@
                            (set-store val cel)
                          )))
           
-          (newport-prim() 
-                       (create-port args))
           
-      ))) 
+          (newport-prim() 
+                       (let ((port
+                       (create-port args)))
+                         (let ((var
+                                (create-var (get-serial (car args)) (get-serial (car args)))))
+                           (let ((varPort
+                  (create-var  (length(vector-ref init-store 0))port )))
+                         (update-store varPort)
+                         (if (variable? (car args))
+                          (set-store (get-serial (car args)) port))
+                      (create-port (get-serial varPort))))))
+          
+           (valport-prim() 
+                       (let((val
+                       (car (apply-store(get-last-ref2 (get-serial (car args)))))))
+                         (if (puerto? val)
+                             (if (list? (get-valor val))
+                             (car(get-valor val))
+                             (get-valor val))
+                             (eopl:error 'apply-primitive "No es una variable de tipo celda ~s" args ))))
+          
+          
+          
+          (isport-prim() 
+                      (let((val
+                       (car (apply-store(get-last-ref2 (get-serial (car args)))))))
+                         (if (puerto? val)
+                             #t
+                             #f)))
+          
+          
+          (sendP-prim()
+                     (let((val
+                       (car (apply-store(get-last-ref2 (get-serial (car args)))))))
+                         (if (puerto? val)
+                             (let ((pos
+                                    (get-last-ref2 (get-serial (car args)))))
+                               (let ((vecP (make-vector 1)))
+                                   (vector-set! vecP 0 (car(cdr args))) 
+                               (if (vector? (get-valor val))
+                                   
+                                   ;(eopl:error 'apply-primitive "noooooooooo ~s"  444)
+                                    (let ((vals(vector-append (get-valor val) vecP)))
+                                      (let ((portVec
+                       (create-port vals)))
+                                 
+                             (set-store pos portVec)))
+                                      ;vals)
+                                      ;(if (puerto? val)
+                                   ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-valor val)) 
+                             
+;                               (if (vector? vecP)
+;                                   (eopl:error 'apply-primitive "noooooooooo ~s"  44444)
+                               (let ((portVec
+                       (create-port vecP)))
+                                 
+                             (set-store pos portVec))))))))
+                             
+                             ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-last-ref2 (get-serial (car args))))
+                             ;(eopl:error 'apply-primitive "noooooooooo ~s"  (car(cdr args)))
+                     
+          
+      )))
+
+
+(define vector-append
+  (lambda vecs
+    (let* ((len (apply + (map vector-length vecs)))
+           (result (make-vector len)))
+      (let loop ((result-index 0)
+                 (source-index 0)
+                 (rest-of-vecs vecs))
+        (cond ((null? rest-of-vecs) result)
+              ((= source-index (vector-length (car rest-of-vecs)))
+               (loop result-index 0 (cdr rest-of-vecs)))
+              (else
+               (vector-set! result result-index
+                            (vector-ref (car rest-of-vecs) source-index))
+               (loop (+ result-index 1) (+ source-index 1) rest-of-vecs)))))))
  
     
 ;*******************************************************************************************

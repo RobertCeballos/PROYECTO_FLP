@@ -110,6 +110,12 @@ setcell{Cell 88}
 @{Cell}
 end
 
+local X Cell in
+set Cell=newcell{44}
+set X = +{@{Cell} @{Cell}}
+X
+end
+
 ;;;;;;;;;;;;;;CICLOS;;;;;;;;;;;;;;;
 
 local X Cell
@@ -122,6 +128,22 @@ for Y in  Ini .. Fin do
 setcell{Cell +{@{Cell} Y}}
 end
 @{Cell}
+end
+
+;;;;;;;;;;;;;;;PUERTO;;;;;;;;;;;;;
+
+local Y X P
+in
+set P = newport{X}
+set Y = P
+isport?{Y}
+end
+
+local X P
+in
+set P=newport{X}
+send{P 33}
+send{P 22}    
 end
 
 ;Registros
