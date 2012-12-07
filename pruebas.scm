@@ -307,7 +307,6 @@ set Cell=newcell{0}
 set Rec = miReg(camp1:Cell camp2:3)
 for Y in  Ini .. Fin do
 setcell{Cell +{@{Cell} Y}}
-
 end
 set X =.Rec.camp1
 @{X}
