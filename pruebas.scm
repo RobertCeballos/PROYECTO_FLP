@@ -309,6 +309,18 @@ set .Rec2.campo1 = 78
 .Rec3.campo1
 end
 
+
+
+
+local A R1 R2
+in
+   set R1 = hola(campo:otto(n:7 b:A) m:_)
+   set R2 = hola(campo:otto(n:7 b:7) m:A)
+   set R1 = R2
+   .R1.campo
+end
+
+
 ;REGISTROS-CELDAS
 local
 Cell X Rec Y
