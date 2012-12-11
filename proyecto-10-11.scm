@@ -20,8 +20,8 @@
   (comment("%" (arbno (not #\newline))) skip)
   ;(variable ((or "_" "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "Ñ" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z") 
    ;            (arbno (or letter digit "?")) ) symbol)
-  (variable ((or "_"(concat (or "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z")
-                           (arbno (or letter digit "?"))))) symbol) 
+   (variable ((or (or "_" "$") (concat (or "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z")
+                           (arbno (or letter digit "_"))))) symbol) 
   (atomo  ((or "a" "b" "c" "ch" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "ñ" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" )
           (arbno  (or letter digit ) ))symbol)
           ;( (arbno "'" letter "'") )) ) symbol)
@@ -449,6 +449,10 @@
            (if( empty? var1)
               (eopl:error 'asignar "no se puede asignar una variable al resultado de un procedimiento ~s" var1)
               (eopl:error 'asignar "no se puede asignar una variable al resultado de un procedimiento ~s" var2))
+           
+           (if (or (procval? var1) (procval? var2))
+               (asig-procval-var var1 var2 env)
+                  
                
                (if (or (celda? var1) (celda?  var2))
          ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-valor var2)) 
@@ -456,6 +460,7 @@
                
                (if (or (puerto? var1)(puerto? var2))
                    (asig-var-port var1 var2 env) 
+
 ;        ;;terminar condicionnnn 
                    (cond
                      ((and (variable? var1) (variable? var2))
@@ -470,9 +475,10 @@
                      ((or(number?  var1) (number? var2)) (asig-var-num var1 var2));variable-numero o numero-variable
                      ((and (registro?  var1) (symbol? (car (get-valor var2))) )(asig-var-reg var2 var1 env)) ; registro-variable
                      ((and (symbol? (car (get-valor var1))) (registro?  var2))(asig-var-reg var1 var2 env)) ; variable-registro
-               )))))))
+               ))))))))
  
 ;asignar una variable a un puerto
+
 (define asig-var-port
   (lambda(var1 var2 env)
     (if (isFree? (get-serial var1))
@@ -498,6 +504,21 @@
 ;          
 
 ;Asignar una variable a otra variable
+    
+    (define asig-procval-var
+  (lambda(var1 var2 env)
+    
+    (if (procval? var1)
+        (let ((serial1 (get-serial var2)))
+          (if (isFree2? serial1)
+              (set-store serial1 var1)))
+        (if (procval? var2)
+            (let ((serial1 (get-serial var1)))
+              (if (isFree2? serial1)
+                  (set-store serial1 var2)))
+            (eopl:error 'asig-procval-var "La variable ya esta asignada")))))
+                   
+    
 (define asig-var-var
   (lambda(var1 var2 env)
      (let ((serial1 (get-serial var1))
@@ -524,7 +545,7 @@
           (num (verificar-sym-var var1 var2 number?)))
       (if (isFree2? (get-serial var))
           (set-store (get-serial var) num)
-          (eopl:error 'asig-var-num "Varible ~s ya derminada" (car (get-valor var)))
+          (eopl:error 'asig-var-num "Variable ~s ya determinada" (car (get-valor var)))
       ))))
 
 
