@@ -80,6 +80,11 @@
     
     (expression ("{" variable (arbno expression)"}") app-exp)
     
+    ;FUNCIONES
+    
+    (expression ("fun" "{" variable  (arbno variable) "}" cuerpo "end") fun-exp)    
+    
+    
      ;EMPTY
     (empty ("#Void") empty-exp)
     
@@ -269,19 +274,29 @@
          (closure vars body env)
          
          (let((serial (apply-env env nombre )))
-           (set-store serial (closure vars body env))))) 
+           (set-store serial (closure vars body env)))))
+      
+      (fun-exp
+       (nombre vars body)
+       (if( equal? nombre '$)
+          (clase vars body env)
+          (let((serial (apply-env env nombre)))
+            (set-store serial (clase vars body env)))))
         
         
-      (app-exp (rator rands)
+      (app-exp (rators rands)
                (begin 
-               (let ((proc (car (apply-store (apply-env env rator))))    
+               (let ((rator (car (apply-store (apply-env env rators))))    
                      (args (eval-rands-proc rands env)))
-                 (if (procval? proc)
+                 (if (procval? rator)
                     (begin
-                    (apply-procedure proc args)
+                    (apply-procedure rator args)
                     (empty-exp ))
+                    
+                    (if (funval? rator)
+                        (apply-procedure rator args)
                     (eopl:error 'eval-expression
-                             "Attempt to apply non-procedure ~s" proc)))))
+                             "Attempt to apply non-procedure ~s" rator))))))
 
       (acc-camp-reg (nomReg camp) 
                     (cons-camp-reg nomReg camp env)) 
@@ -319,7 +334,7 @@
                      (car arg))
                   ))))))
                             
-      ))) 
+      )))  
       
     
 
@@ -863,13 +878,26 @@
    (ids (list-of symbol?))
    (body cuerpo?)
    (env environment?)))
+;Funciones
+
+(define-datatype funval funval?
+  (clase
+   (ids (list-of symbol?))
+   (body cuerpo?)
+   (env environment?)))
+
 
 ;apply-procedure: evalua el cuerpo de un procedimientos en el ambiente extendido correspondiente
 (define apply-procedure
   (lambda (proc args)
-    (cases procval proc
-      (closure (ids body env)
-               (eval-cuerpo body (extend-env ids args env))))))
+    (if (procval? proc)
+        (cases procval proc
+          (closure (ids body env)
+                   (eval-cuerpo body (extend-env ids args env))))
+        (if (funval? proc)
+            (cases funval proc
+          (clase (ids body env)
+                   (eval-cuerpo body (extend-env ids args env))))))))
 
 
 
