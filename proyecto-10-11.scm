@@ -18,14 +18,10 @@
 (define scanner-spec-simple-interpreter
 '((white-sp(whitespace) skip)
   (comment("%" (arbno (not #\newline))) skip)
-  ;(variable ((or "_" "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "Ñ" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z") 
-   ;            (arbno (or letter digit "?")) ) symbol)
    (variable ((or (or "_" "$") (concat (or "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z")
                            (arbno (or letter digit "_"))))) symbol) 
-  (atomo  ((or "a" "b" "c" "ch" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "ñ" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" )
-          (arbno  (or letter digit ) ))symbol)
-          ;( (arbno "'" letter "'") )) ) symbol)
-  ;(a-variable ("_") symbol)
+  (atomo  ((or (concat "'"(arbno (not #\'))"'") (concat (or "a" "b" "c" "ch" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "ñ" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x"
+                                                            "y" "z" )(arbno  (or letter digit ))))) symbol)
           
   
   (entero (digit (arbno digit)) string)
@@ -45,8 +41,6 @@
     (cuerpo (expression (arbno expression)) cuerpoc)
     
     (expression (variable) var-exp)
-    
-    ;(expression (a-variable) a-var-exp)
     
     (expression (entero) entero-exp)
     
@@ -176,15 +170,6 @@
       )))
 
 
-(define print
-  (lambda (resultado)
-    (if (number? resultado) (unparse resultado)
-        (if (variable? resultado) 
-          (cases variable resultado
-            (a-variable (serial valor)
-                        (print(car(apply-store serial)))))
-          resultado))))
-
 ;Env inicial      
 (define init-env
   (lambda ()
@@ -237,6 +222,44 @@
              (campos (list-of symbol?))
              (vals vector?)))
 
+;********************************FUNCIONES IMPRESION***********************************
+
+(define print
+  (lambda (resultado)
+    (if (number? resultado) (unparse resultado)
+        (if (variable? resultado) 
+          (cases variable resultado
+            (a-variable (serial valor)
+                        (print(car(apply-store serial)))))
+          (if (registro?  resultado)
+              (cases registro resultado
+                (reg-vacio (etiq) etiq)
+                (reg-datos (sym camps vals) (printReg sym camps (vector-ref vals 0 ))))
+          resultado)))))
+
+
+(define printReg
+  (lambda (sym campos valores)
+    (cons sym (list (aux-print-reg campos valores)))))
+
+(define aux-print-reg
+  (lambda (campos valores)
+    (if (null? campos) '()
+         (let ((valorFinal (car (apply-store (get-last-ref2 (car valores))))))
+           (if (registro? valorFinal)
+               (cases registro valorFinal
+                 (reg-vacio (etiq) etiq)
+                 (reg-datos (sym camp val) (cons (car campos)  (cons ':  (append (list(printReg sym camp (vector-ref val 0))) (aux-print-reg (cdr campos) 
+                                                                                                                                             (cdr valores)))))))
+                  (append(cons (car campos) (cons ': (append (list valorFinal) (aux-print-reg (cdr campos) (cdr valores))))))) ))))
+
+
+
+
+
+
+
+
 ;**************************************************************************************
 ;;************************************Expresiones************************************
 ;eval-expression
@@ -253,8 +276,6 @@
                (if (equal? id '_) (update-store2 (create-var  (length(vector-ref init-store 0))  id ) )
                      (let ((serial (apply-env env id)))
                                 (create-var serial id))))
-      
-     ; (a-var-exp () create-a-var())
       
       (list-exp (exps)
                 ())
@@ -547,7 +568,7 @@
           (if (and (registro? (car(apply-store (get-last-ref2 (get-serial var1))))) (registro? (car(apply-store (get-last-ref2 (get-serial var2))))))
               (if (equal? (eval-regs (car(apply-store (get-last-ref2 (get-serial var1))))  (car(apply-store (get-last-ref2 (get-serial var2)))) ) #t)
                   (unif-regs (car(apply-store (get-last-ref2 (get-serial var1)))) (car(apply-store (get-last-ref2 (get-serial var2)))))
-              (eopl:error 'asig-var "No se puede unificar")
+              (eopl:error 'asig-var-var "No se puede unificar")
            )
        )))))
 
@@ -575,10 +596,7 @@
                            (let ((regEnStore(create-reg etiq camp (vector-ref vals 0 ) env)))
                              (set-store (get-serial var1) regEnStore))))))))
                             
-                          ;(apply-env-env env (car (get-valor var1)) (get-serial regEnStore) ))))))))
         
-
-
 ;Funcion q determina si una variable esta libre (una variable puede referenciar a otra variable)
 (define isFree2?
   (lambda (pos)
@@ -1155,8 +1173,15 @@
                                            (unif-camps-reg (+ posCampo 1) camp1 val1 camp2 val2))
                                          (if  (and (registro? (car (apply-store serial-maximo-var1))) (registro? (car (apply-store serial-maximo-var2))))
                                               (begin
+                                                (unif-regs (car (apply-store serial-maximo-var1)) (car (apply-store serial-maximo-var2)))
                                                 (set-store serial-maximo-var1 (create-var posCamp2 campoActual))
                                                 (unif-camps-reg (+ posCampo 1) camp1 val1 camp2 val2))
+                                              (if  (equal? (car (apply-store serial-maximo-var1)) (car (apply-store serial-maximo-var2)))
+                                                       (begin
+                                                         (set-store serial-maximo-var2 (create-var posCamp1 campoActual))
+                                                         (unif-camps-reg (+ posCampo 1) camp1 val1 camp2 val2))
+                                                       (eopl:error 'unif-camps-regs
+                                                             "caso no tratado en ~s" serial-maximo-var2))
                                              
                    
                     )))))))))))))
@@ -1222,8 +1247,3 @@
 (define miRegistro2 (reg-datos 'miRegistro '(campo1 campo2 campo3) #((_ 2 3))))
 
 
-
-;(asig-val-cam-reg miRegistro 'campo1 2)
-;(update-store (create-var (length(vector-ref init-store 0)) miRegistro))
-;init-store
-;(asignar-pos-en-store '(1 2 3))
