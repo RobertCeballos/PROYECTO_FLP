@@ -387,20 +387,49 @@ set X =.Rec.camp1
 @{X}
 end
 
-; Procedimientos
+;*************Procedimientos******************
 
-local X D in proc{X Y} +{Y 1}end  set D ={X 2}end
+local X D 
+in 
+proc{X Y} +{Y 1}end  
+set D ={X 2}end
 
-local X Y Z in proc {X Y Z} set Y=Z end set Y=2 {X Y Z} Z end
+local X Y Z 
+in 
+proc {X Y Z} set Y=Z end 
+set Y=2 {X Y Z} 
+Z 
+end
 
-local X Y Z in proc {X Y Z} set Y=Z end set Y=2 {X Y Z} end
+local X Y Z 
+in 
+proc {X Y Z} set Y=Z end 
+set Y=2 {X Y Z} 
+end
 
-local X in set X = proc{$ Y Z} +{Y Z}end X end
+local X 
+in 
+set X = proc{$ Y Z} +{Y Z}end 
+X 
+end
 
-local X in set X = proc{$ Y Z} +{Y Z}end {X 2 3} end
+local X 
+in 
+set X = proc{$ Y Z} +{Y Z}end 
+{X 2 3} 
+end
 
-local X Y Z in set X = proc{$ Y Z} set Y = Z end set Y = 2 {X Y Z} end
+local X Y Z 
+in 
+set X = proc{$ Y Z} set Y = Z end 
+set Y = 2 {X Y Z} 
+end
 
-local X Y Z in set X = proc{$ Y Z} set Y = Z end set Y = 2 {X Y Z} Z end
-
+local X Y Z 
+in 
+set X = proc{$ Y Z} set Y = Z end 
+set Y = 2 
+{X Y Z} 
+Z 
+end
 
