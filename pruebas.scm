@@ -346,3 +346,12 @@ set X =.Rec.camp1
 @{X}
 end
 
+; Procedimientos
+
+local X D in proc{X Y} +{Y 1}end  set D ={X 2}end
+
+local X Y Z in proc {X Y Z} set Y=Z end set Y=2 {X Y Z} Z end
+
+local X Y Z in proc {X Y Z} set Y=Z end set Y=2 {X Y Z} end
+
+
