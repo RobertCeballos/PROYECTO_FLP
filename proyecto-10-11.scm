@@ -73,6 +73,13 @@
     
     (expression ("." variable "." atomo) acc-camp-reg)
     
+        ;; PROCEDIMIENTOS
+    
+    
+    (expression ("proc" "{" variable  (arbno variable) "}" cuerpo "end") proc-exp)    
+    
+    (expression ("{" variable (arbno expression)"}") app-exp)
+    
     
     
     ;BOOLEANOS
@@ -222,32 +229,6 @@
              (campos (list-of symbol?))
              (vals vector?)))
 
-;**********************************VARIABLES ANONIMAS*********************************
-;(define buscar-underscore 
- ; (lambda (lista)
-  ;  (cond
-   ;   [(not(equal? "_" (car lista))) #f]
-    ;  [(equal? "_" (car lista)) #t]
-     ; [(buscar-underscore(cdr lista))])
-    ;)
-  ;)
-
-;(define poner-underscore
- ; (lambda (lista)
-  ;  (if (buscar-underscore lista) lista
-   ;     (append (list "_") lista))))
-
-
-;; funcion que crea una variable anonima poniendo _ en el store
-
-;(define create-a-var 
- ; (lambda ()
-  ;  (poner-underscore (vector-ref init-store 0))
-   ; ))
-
-
-
-
 ;**************************************************************************************
 ;;************************************Expresiones************************************
 ;eval-expression
@@ -279,6 +260,23 @@
                     (let ((vector-vals (make-vector 1)))
                       (vector-set! vector-vals 0 vals)
                       (reg-datos etiq camp vector-vals))))
+      (proc-exp  
+      (nombre vars body)
+      (if( equal? nombre '$)
+         (closure vars body env)
+         
+         (let((serial (apply-env env nombre )))
+           (set-store serial (closure vars body env))))) 
+        
+        
+      (app-exp (rator rands)
+               (begin 
+               (let ((proc (car (apply-store (apply-env env rator))))    
+                     (args (eval-rands-proc rands env)))
+                 (if (procval? proc)
+                    (apply-procedure proc args)
+                    (eopl:error 'eval-expression
+                             "Attempt to apply non-procedure ~s" proc)))))
 
       (acc-camp-reg (nomReg camp) 
                     (cons-camp-reg nomReg camp env)) 
@@ -589,6 +587,20 @@
   (lambda (rands env)
     (map (lambda (x) (eval-expression x env)) rands)))
 
+(define eval-rands-proc
+  (lambda (rands env)
+    (let ((args(map (lambda (x) (eval-expression x env)) rands))) 
+           (eval-rands-proc-aux args))))  
+    
+    (define eval-rands-proc-aux
+      (lambda (rands)
+        (if (null? rands) '()
+            (if (variable? (car rands)) (cons (get-serial (car rands)) (eval-rands-proc-aux (cdr rands)))
+                (if (number? (car rands))
+                    (let ((serial (get-serial (update-store2 (create-var (length(vector-ref init-store 0)) (car rands)) ))))
+                      (cons serial (eval-rands-proc-aux (cdr rands))))
+                    (eval-rands-proc-aux (cdr rands)))))))
+
 ;;******************************************************************************************
 ;****************************************PRIMITIVAS***************************************
 
@@ -818,7 +830,7 @@
 (define-datatype procval procval?
   (closure
    (ids (list-of symbol?))
-   (body expression?)
+   (body cuerpo?)
    (env environment?)))
 
 ;apply-procedure: evalua el cuerpo de un procedimientos en el ambiente extendido correspondiente
@@ -826,7 +838,7 @@
   (lambda (proc args)
     (cases procval proc
       (closure (ids body env)
-               (eval-expression body (extend-env ids args env))))))
+               (eval-cuerpo body (extend-env ids args env))))))
 
 
 
