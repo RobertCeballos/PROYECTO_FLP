@@ -116,7 +116,7 @@ set X = +{@{Cell} @{Cell}}
 X
 end
 
-;;;;;;;;;;;;;;CICLOS;;;;;;;;;;;;;;;
+;******************CICLOS******************
 
 local X Cell
 Ini Fin
@@ -130,7 +130,7 @@ end
 @{Cell}
 end
 
-;;;;;;;;;;;;;;;PUERTO;;;;;;;;;;;;;
+;******************PUERTO******************
 
 local Y X P
 in
@@ -146,7 +146,15 @@ send{P 33}
 send{P 22}    
 end
 
-;Registros
+;******************Registros********************
+local
+X
+in
+set X = miregistro('Campo1':15 campo2:10)
+X
+end
+
+
 local
 X
 in
@@ -310,8 +318,6 @@ set .Rec2.campo1 = 78
 end
 
 
-
-
 local A R1 R2
 in
    set R1 = hola(campo:otto(n:7 b:A) m:_)
@@ -320,8 +326,43 @@ in
    .R1.campo
 end
 
+local A R1 R2 F
+in
+   set R1 = hola(campo:otto(n:7 b:F) m:_)
+   set R2 = hola(campo:otto(n:7 b:_) m:A)
+   set R1 = R2
+   set F=3
+   .R1.campo
+end
 
-;REGISTROS-CELDAS
+
+
+local A R1 R2 F
+in
+   set R1 = hola(campo:otto(n:unoMas(campito: F) b:F) m:_)
+   set R2 = hola(campo:otto(n:unoMas(campito: _) b:_) m:A)
+   set R1 = R2
+   set F=3
+   .R1.campo
+end
+
+
+local A R1 R2 R3 R4 F 
+in
+   set R1 = hola(campo:otto(n:unoMas(campito: F) b:F) m:_)
+   set R2 = hola(campo:otto(n:unoMas(campito: _) b:_) m:A)
+   set R1 = R2
+   set R3 = .R1.campo
+   set R4 = .R3.n
+   set F=3
+   +{.R4.campito 6}
+end
+
+
+
+
+
+;**********REGISTROS-CELDAS*******************
 local
 Cell X Rec Y
 in
@@ -348,48 +389,18 @@ end
 
 ; Procedimientos
 
-local X D 
-in 
-proc{X Y} +{Y 1}end  
-set D ={X 2}end
+local X D in proc{X Y} +{Y 1}end  set D ={X 2}end
 
-local X Y Z 
-in 
-proc {X Y Z} set Y=Z end 
-set Y=2 {X Y Z} 
-Z 
-end
+local X Y Z in proc {X Y Z} set Y=Z end set Y=2 {X Y Z} Z end
 
-local X Y Z 
-in 
-proc {X Y Z} set Y=Z end 
-set Y=2 {X Y Z} 
-end
+local X Y Z in proc {X Y Z} set Y=Z end set Y=2 {X Y Z} end
 
-local X 
-in 
-set X = proc{$ Y Z} +{Y Z}end 
-X 
-end
+local X in set X = proc{$ Y Z} +{Y Z}end X end
 
-local X 
-in 
-set X = proc{$ Y Z} +{Y Z}end 
-{X 2 3} 
-end
+local X in set X = proc{$ Y Z} +{Y Z}end {X 2 3} end
 
-local X Y Z 
-in 
-set X = proc{$ Y Z} set Y = Z end 
-set Y = 2 {X Y Z} 
-end
+local X Y Z in set X = proc{$ Y Z} set Y = Z end set Y = 2 {X Y Z} end
 
-local X Y Z 
-in 
-set X = proc{$ Y Z} set Y = Z end 
-set Y = 2 
-{X Y Z} 
-Z 
-end
+local X Y Z in set X = proc{$ Y Z} set Y = Z end set Y = 2 {X Y Z} Z end
 
 
