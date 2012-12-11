@@ -73,12 +73,15 @@
     
     (expression ("." variable "." atomo) acc-camp-reg)
     
-        ;; PROCEDIMIENTOS
+    ;PROCEDIMIENTOS
     
     
     (expression ("proc" "{" variable  (arbno variable) "}" cuerpo "end") proc-exp)    
     
     (expression ("{" variable (arbno expression)"}") app-exp)
+    
+     ;EMPTY
+    (empty ("#Void") empty-exp)
     
     
     
@@ -274,7 +277,9 @@
                (let ((proc (car (apply-store (apply-env env rator))))    
                      (args (eval-rands-proc rands env)))
                  (if (procval? proc)
+                    (begin
                     (apply-procedure proc args)
+                    (empty-exp ))
                     (eopl:error 'eval-expression
                              "Attempt to apply non-procedure ~s" proc)))))
 
@@ -438,29 +443,34 @@
 (define asignar
   (lambda (var1 var2 env)
      (let ((var1 (eval-expression var1 env))
-               (var2 (eval-expression var2 env)))
-     (if (or (celda? var1) (celda?  var2))
-         ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-valor var2))
-         (asig-var-cel var1 var2 env)
-         (if (or (puerto? var1)(puerto? var2))
-             (asig-var-port var1 var2 env)
+           (var2 (eval-expression var2 env)))
+       (if (or( empty? var1) (empty? var2))
+           
+           (if( empty? var1)
+              (eopl:error 'asignar "no se puede asignar una variable al resultado de un procedimiento ~s" var1)
+              (eopl:error 'asignar "no se puede asignar una variable al resultado de un procedimiento ~s" var2))
+               
+               (if (or (celda? var1) (celda?  var2))
+         ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-valor var2)) 
+               (asig-var-cel var1 var2 env)
+               
+               (if (or (puerto? var1)(puerto? var2))
+                   (asig-var-port var1 var2 env) 
 ;        ;;terminar condicionnnn 
-        
-             (cond
-               ((and (variable? var1) (variable? var2))
-                (cond
-                  ((and (symbol? (car (get-valor var1))) (registro? (car (get-valor var2)))(asig-var-reg var1 var2 env))) ;variable-registro (aqui no llega)
-                  ((or (and (symbol? (car (get-valor var1))) (symbol? (car (get-valor var2)))) ; variable-variable
-                       (and (number? (car (get-valor var1))) (symbol? (car (get-valor var2)))) ;campoReg-var
-                       (and (symbol? (car (get-valor var1))) (number? (car (get-valor var2)))) ;var-campoReg
-                       (and (number? (car (get-valor var1))) (number? (car (get-valor var2))))) ;campoReg-campoReg
-                   (asig-var-var var1 var2 env))
-                  
-                  )) 
-               ((or(number?  var1) (number? var2)) (asig-var-num var1 var2));variable-numero o numero-variable
-               ((and (registro?  var1) (symbol? (car (get-valor var2))) )(asig-var-reg var2 var1 env)) ; registro-variable
-               ((and (symbol? (car (get-valor var1))) (registro?  var2))(asig-var-reg var1 var2 env)) ; variable-registro
-               ))))))
+                   (cond
+                     ((and (variable? var1) (variable? var2))
+                      (cond
+                        ((and (symbol? (car (get-valor var1))) (registro? (car (get-valor var2)))(asig-var-reg var1 var2 env))) ;variable-registro (aqui no llega)
+                        ((or (and (symbol? (car (get-valor var1))) (symbol? (car (get-valor var2)))) ; variable-variable
+                             (and (number? (car (get-valor var1))) (symbol? (car (get-valor var2)))) ;campoReg-var
+                             (and (symbol? (car (get-valor var1))) (number? (car (get-valor var2)))) ;var-campoReg
+                             (and (number? (car (get-valor var1))) (number? (car (get-valor var2))))) ;campoReg-campoReg
+                         (asig-var-var var1 var2 env))
+                        )) 
+                     ((or(number?  var1) (number? var2)) (asig-var-num var1 var2));variable-numero o numero-variable
+                     ((and (registro?  var1) (symbol? (car (get-valor var2))) )(asig-var-reg var2 var1 env)) ; registro-variable
+                     ((and (symbol? (car (get-valor var1))) (registro?  var2))(asig-var-reg var1 var2 env)) ; variable-registro
+               )))))))
  
 ;asignar una variable a un puerto
 (define asig-var-port
