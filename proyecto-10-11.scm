@@ -22,7 +22,11 @@
    ;            (arbno (or letter digit "?")) ) symbol)
    (variable ((or (or "_" "$") (concat (or "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z")
                            (arbno (or letter digit "_"))))) symbol) 
-  (atomo  ((or "a" "b" "c" "ch" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "ñ" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" )
+  
+   (identifier
+   (letter (arbno (or letter digit "?"))) symbol)
+   
+   (atomo  ((or "a" "b" "c" "ch" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "ñ" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" )
           (arbno  (or letter digit ) ))symbol)
           ;( (arbno "'" letter "'") )) ) symbol)
           
@@ -88,6 +92,17 @@
     ;CONDICIONALES
     
     (expression ("if"  expression "then" cuerpo "else" cuerpo "end") if-exp)
+    
+    ;PATRONES
+    
+    (patron  (identifier "(" (arbno identifier ":"  patron) ")") record-pat)
+    
+    (patron (variable) var-pat)
+    (patron (flotante) flotante-pat)
+    (patron (entero) entero-pat)
+    
+    ;CASES
+    (expression ( "case" expression "of" patron "then" cuerpo (arbno "[]" patron "then" cuerpo) (arbno "else" cuerpo) "end")  case-exp) 
     
     ;BOOLEANOS
     (expression (boolean) bool-exp)
@@ -248,7 +263,8 @@
       
       (flotante-exp (flt)(parse-to-number flt)) 
       
-     (var-exp (id) 
+     
+      (var-exp (id) 
                (if (equal? id '_) (update-store2 (create-var  (length(vector-ref init-store 0))  id ) )
                      (let ((serial (apply-env env id)))
                                 (create-var serial id))))
@@ -257,6 +273,9 @@
       
       (list-exp (exps)
                 ())
+  
+      (case-exp (eval-exp pat conseq pats conseqs else) 
+                (pat))
       
       (primapp-exp (prim rands)
                    (let ((args (eval-primapp-exp-rands rands env)))
@@ -1257,3 +1276,4 @@
 ;(update-store (create-var (length(vector-ref init-store 0)) miRegistro))
 ;init-store
 ;(asignar-pos-en-store '(1 2 3))
+
