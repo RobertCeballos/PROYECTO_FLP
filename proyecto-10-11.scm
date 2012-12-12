@@ -88,7 +88,9 @@
      ;EMPTY
     (empty ("#Void") empty-exp)
     
+    ;CONDICIONALES
     
+    (expression ("if"  expression "then" cuerpo "else" cuerpo "end") if-exp)
     
     ;BOOLEANOS
     (expression (boolean) bool-exp)
@@ -292,22 +294,26 @@
                     (begin
                     (apply-procedure rator args)
                     (empty-exp ))
-                    
                     (if (funval? rator)
                         (apply-procedure rator args)
                     (eopl:error 'eval-expression
-                             "Attempt to apply non-procedure ~s" rator))))))
+                             "Attempt to apply non-function ~s" rator))))))
 
       (acc-camp-reg (nomReg camp) 
                     (cons-camp-reg nomReg camp env)) 
        
       (set-exp (vars exp) 
                (asignar vars exp env))
+      
+      (if-exp (cond-exp then-exp else-exp)
+              (if (equal? (eval-expression cond-exp env) "true")
+                  (eval-cuerpo then-exp env)
+                  (eval-cuerpo else-exp env)))
                    
       (bool-exp (exp)
                 (cases boolean exp
-                  (true-exp () #t)
-                  (false-exp () #f)))
+                  (true-exp () "true")
+                  (false-exp () "false")))
        
       (local-exp (vars body) 
                  (begin
@@ -455,42 +461,46 @@
  
 ;Funcion que de acuerdo al tipo de elemento realiza una asignacion (cambio en esta funcion)
 
+
 (define asignar
   (lambda (var1 var2 env)
      (let ((var1 (eval-expression var1 env))
            (var2 (eval-expression var2 env)))
+       
        (if (or( empty? var1) (empty? var2))
            
            (if( empty? var1)
               (eopl:error 'asignar "no se puede asignar una variable al resultado de un procedimiento ~s" var1)
               (eopl:error 'asignar "no se puede asignar una variable al resultado de un procedimiento ~s" var2))
            
-           (if (or (procval? var1) (procval? var2))
-               (asig-procval-var var1 var2 env)
+           (if (or (procval? var1) (procval? var2)) ;; Si alguna de las variables o expresiones son un procedimiento se asigna a la variable en el valor si esta libre
+               (asig-procval-var var1 var2 env) 
+               
+               (if(or (funval? var1)(funval? var2));; Si alguna de las variables o expresiones son una funcion se asigna a la variable en el valor si esta libre
+                  (asig-funval-var var1 var2 env)
                   
-               
-               (if (or (celda? var1) (celda?  var2))
-         ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-valor var2)) 
-               (asig-var-cel var1 var2 env)
-               
-               (if (or (puerto? var1)(puerto? var2))
-                   (asig-var-port var1 var2 env) 
+                  (if (or (celda? var1) (celda?  var2))
+         ;(eopl:error 'apply-primitive "noooooooooo ~s"  (get-valor var2))
+                      (asig-var-cel var1 var2 env)
+                      
+                      (if (or (puerto? var1)(puerto? var2))
+                          (asig-var-port var1 var2 env) 
 
-;        ;;terminar condicionnnn 
-                   (cond
-                     ((and (variable? var1) (variable? var2))
-                      (cond
-                        ((and (symbol? (car (get-valor var1))) (registro? (car (get-valor var2)))(asig-var-reg var1 var2 env))) ;variable-registro (aqui no llega)
-                        ((or (and (symbol? (car (get-valor var1))) (symbol? (car (get-valor var2)))) ; variable-variable
-                             (and (number? (car (get-valor var1))) (symbol? (car (get-valor var2)))) ;campoReg-var
-                             (and (symbol? (car (get-valor var1))) (number? (car (get-valor var2)))) ;var-campoReg
-                             (and (number? (car (get-valor var1))) (number? (car (get-valor var2))))) ;campoReg-campoReg
-                         (asig-var-var var1 var2 env))
-                        )) 
-                     ((or(number?  var1) (number? var2)) (asig-var-num var1 var2));variable-numero o numero-variable
-                     ((and (registro?  var1) (symbol? (car (get-valor var2))) )(asig-var-reg var2 var1 env)) ; registro-variable
-                     ((and (symbol? (car (get-valor var1))) (registro?  var2))(asig-var-reg var1 var2 env)) ; variable-registro
-               ))))))))
+;        ;;terminar condicionnnn
+                          (cond
+                            ((and (variable? var1) (variable? var2))
+                             (cond
+                               ((and (symbol? (car (get-valor var1))) (registro? (car (get-valor var2)))(asig-var-reg var1 var2 env))) ;variable-registro (aqui no llega)
+                               ((or (and (symbol? (car (get-valor var1))) (symbol? (car (get-valor var2)))) ; variable-variable
+                                    (and (number? (car (get-valor var1))) (symbol? (car (get-valor var2)))) ;campoReg-var
+                                    (and (symbol? (car (get-valor var1))) (number? (car (get-valor var2)))) ;var-campoReg
+                                    (and (number? (car (get-valor var1))) (number? (car (get-valor var2))))) ;campoReg-campoReg
+                                (asig-var-var var1 var2 env))
+                               ))
+                            ((or(number?  var1) (number? var2)) (asig-var-num var1 var2));variable-numero o numero-variable
+                            ((and (registro?  var1) (symbol? (car (get-valor var2))) )(asig-var-reg var2 var1 env)) ; registro-variable
+                            ((and (symbol? (car (get-valor var1))) (registro?  var2))(asig-var-reg var1 var2 env)) ; variable-registro
+               )))))))))
  
 ;asignar una variable a un puerto
 
@@ -518,37 +528,60 @@
          )))))
 ;          
 
-;Asignar una variable a otra variable
+
     
-    (define asig-procval-var
+ ;;Asignar a una variable un procedimiento anonimo   
+
+(define asig-procval-var
   (lambda(var1 var2 env)
     
     (if (procval? var1)
+        
         (let ((serial1 (get-serial var2)))
           (if (isFree2? serial1)
               (set-store serial1 var1)))
         (if (procval? var2)
             (let ((serial1 (get-serial var1)))
               (if (isFree2? serial1)
+                  
                   (set-store serial1 var2)))
+            
             (eopl:error 'asig-procval-var "La variable ya esta asignada")))))
-                   
     
-(define asig-var-var
-  (lambda(var1 var2 env)
-     (let ((serial1 (get-serial var1))
-           (serial2(get-serial var2)))
        
-      (if (or (isFree2? (get-serial var1)) (isFree2? (get-serial var2)))
-          (if (isFree2? (get-serial var1))(set-store (get-serial var1) (create-var (get-serial var2) (car (get-valor var2))))
-              (if (isFree2? (get-serial var2))(set-store (get-serial var2) (create-var (get-serial var1) (car (get-valor var1))))))
-          
-          ;Para unificar dos registros
-          (if (and (registro? (car(apply-store (get-last-ref2 (get-serial var1))))) (registro? (car(apply-store (get-last-ref2 (get-serial var2))))))
-              (if (equal? (eval-regs (car(apply-store (get-last-ref2 (get-serial var1))))  (car(apply-store (get-last-ref2 (get-serial var2)))) ) #t)
-                  (unif-regs (car(apply-store (get-last-ref2 (get-serial var1)))) (car(apply-store (get-last-ref2 (get-serial var2)))))
-              (eopl:error 'asig-var "No se puede unificar")
-           )
+;;Asignar a una variable una funcion anonima
+
+(define asig-funval-var
+  (lambda(var1 var2 env)
+    (if (funval? var1)
+        
+        (let ((serial1 (get-serial var2)))
+          (if (isFree2? serial1)
+              (set-store serial1 var1)))
+        
+        (if (funval? var2)
+            (let ((serial1 (get-serial var1)))
+              (if (isFree2? serial1)
+                  (set-store serial1 var2)))
+        
+        (eopl:error 'asig-procval-var "La variable ya esta asignada")))))
+
+       ;Asignar una variable a otra variable
+       
+       (define asig-var-var
+         (lambda(var1 var2 env)
+           (let ((serial1 (get-serial var1))
+                 (serial2(get-serial var2)))
+             (if (or (isFree2? (get-serial var1)) (isFree2? (get-serial var2)))
+                 (if (isFree2? (get-serial var1))(set-store (get-serial var1) (create-var (get-serial var2) (car (get-valor var2))))
+                     (if (isFree2? (get-serial var2))(set-store (get-serial var2) (create-var (get-serial var1) (car (get-valor var1))))))
+                 
+                 ;Para unificar dos registros
+                 (if (and (registro? (car(apply-store (get-last-ref2 (get-serial var1))))) (registro? (car(apply-store (get-last-ref2 (get-serial var2))))))
+                     (if (equal? (eval-regs (car(apply-store (get-last-ref2 (get-serial var1))))  (car(apply-store (get-last-ref2 (get-serial var2)))) ) #t)
+                         (unif-regs (car(apply-store (get-last-ref2 (get-serial var1)))) (car(apply-store (get-last-ref2 (get-serial var2)))))
+                         (eopl:error 'asig-var "No se puede unificar")
+                         )
        )))))
 
       
@@ -676,13 +709,13 @@
                           (if (= 0 (cadr args)) (eopl:error 'apply-primitive "Error Division por 0")
                                  (/ (car args) (cadr args))))))
           
-          (menor-prim() (let((args (to-number  args))) (< (car args) (cadr args))))
-          (meneq-prim() (let((args (to-number  args))) (<= (car args) (cadr args))))
-          (mayor-prim() (let((args (to-number  args)))(> (car args) (cadr args))))
-          (mayig-prim() (let((args (to-number  args)))(>= (car args) (cadr args))))
-          (igual-prim() (let((args (to-number  args))) (equal? (car args) (cadr args))))
+          (menor-prim() (let((args (to-number  args))) (if (equal? (< (car args) (cadr args)) #t) "true" "false")))
+          (meneq-prim() (let((args (to-number  args))) (if (equal? (<= (car args) (cadr args)) #t) "true" "false")))
+          (mayor-prim() (let((args (to-number  args))) (if (equal? (> (car args) (cadr args)) #t) "true" "false")))
+          (mayig-prim() (let((args (to-number  args))) (if (equal? (>= (car args) (cadr args)) #t) "true" "false")))
+          (igual-prim() (let((args (to-number  args))) (if (equal? (equal? (car args) (cadr args)) #t) "true" "false")))
           (orelse-prim() (let((args (to-number  args)))
-                           (if (and (or(equal? (car args) #t)(equals? (car args) #f))(or(equal? (cadr args) #t)(equals? (cadr args) #f)))
+                           (if (and (or(equal? (car args) #t)(equal? (car args) #f)) (or(equal? (cadr args) #t)(equals? (cadr args) #f)))
                              (or (car args) (cadr args)))))
           (andthen-prim() (let((args (to-number prim args)))(and (car args) (cadr args))))
           (unif-prim() ())
