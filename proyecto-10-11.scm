@@ -18,12 +18,10 @@
 (define scanner-spec-simple-interpreter
 '((white-sp(whitespace) skip)
   (comment("%" (arbno (not #\newline))) skip)
-  ;(variable ((or "_" "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "Ñ" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z") 
-   ;            (arbno (or letter digit "?")) ) symbol)
    (variable ((or (or "_" "$") (concat (or "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z")
                            (arbno (or letter digit "_"))))) symbol) 
-  (atomo  ((or "a" "b" "c" "ch" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "ñ" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" )
-          (arbno  (or letter digit ) ))symbol)
+  (atomo  ((or (concat "'"(arbno (not #\'))"'") (concat (or "a" "b" "c" "ch" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "ñ" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x"
+                                                            "y" "z" )(arbno  (or letter digit ))))) symbol)
           ;( (arbno "'" letter "'") )) ) symbol)
   ;(a-variable ("_") symbol)
           
@@ -88,7 +86,6 @@
      ;EMPTY
     (empty ("#Void") empty-exp)
     
-    ;CONDICIONALES
     
     (expression ("if"  expression "then" cuerpo "else" cuerpo "end") if-exp)
     
