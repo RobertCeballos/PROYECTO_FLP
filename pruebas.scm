@@ -433,3 +433,18 @@ set Y = 2
 Z 
 end
 
+local X 
+in fun{X Y Z} 
+set Y = Z 
+end 
+X 
+end
+
+local X Y 
+in fun{X Y Z} 
+set Y = Z 
+end 
+{X 2 Y} 
+Y 
+end
+

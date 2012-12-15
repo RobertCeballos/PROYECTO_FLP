@@ -23,12 +23,12 @@
    (variable ((or (or "_" "$") (concat (or "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z")
                            (arbno (or letter digit "_"))))) symbol) 
   
-   (identifier
-   (letter (arbno (or letter digit "?"))) symbol)
-   
    (atomo  ((or "a" "b" "c" "ch" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "ñ" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" )
           (arbno  (or letter digit ) ))symbol)
           ;( (arbno "'" letter "'") )) ) symbol)
+   
+     
+   
           
   
   (entero (digit (arbno digit)) string)
@@ -85,24 +85,19 @@
     
     (expression ("fun" "{" variable  (arbno variable) "}" cuerpo "end") fun-exp)    
     
+    ;PATRONES
     
-     ;EMPTY
+    (patron ( atomo "("(arbno atomo ":" patron ")" ) )pat-exp)
+    (patron ( variable) var-pat)
+    (patron (entero) enterot-pat)
+    (patron (flotante) float-pat)
+    
+    ;EMPTY
     (empty ("#Void") empty-exp) 
      
     ;CONDICIONALES
     
     (expression ("if"  expression "then" cuerpo "else" cuerpo "end") if-exp)
-    
-    ;PATRONES
-    
-    (patron  (identifier "(" (arbno identifier ":"  patron) ")") record-pat)
-    
-    (patron (variable) var-pat)
-    (patron (flotante) flotante-pat)
-    (patron (entero) entero-pat)
-    
-    ;CASES
-    (expression ( "case" expression "of" patron "then" cuerpo (arbno "[]" patron "then" cuerpo) (arbno "else" cuerpo) "end")  case-exp) 
     
     ;BOOLEANOS
     (expression (boolean) bool-exp)
@@ -263,19 +258,16 @@
       
       (flotante-exp (flt)(parse-to-number flt)) 
       
-     
-      (var-exp (id) 
+     (var-exp (id) 
                (if (equal? id '_) (update-store2 (create-var  (length(vector-ref init-store 0))  id ) )
                      (let ((serial (apply-env env id)))
                                 (create-var serial id))))
       
      ; (a-var-exp () create-a-var())
       
+
       (list-exp (exps)
                 ())
-  
-      (case-exp (eval-exp pat conseq pats conseqs else) 
-                (pat))
       
       (primapp-exp (prim rands)
                    (let ((args (eval-primapp-exp-rands rands env)))
@@ -345,7 +337,7 @@
           (let (( var-s (eval-expression var-stop env)))
             
                 (let ((varv (car (apply-store (get-serial var-v)))))
-                (let ((vars (car (apply-store (get-serial var-s)))))
+                (let ((vars (car (apply-store (get-serial var-s))))) 
                   (update-store var-v)
 ;                 (if (variable? var-v)(eopl:error 'apply-env "Noooooo binding for ~s" (length (vector-ref init-store 0)))
         (for-exp-aux  (car var)
@@ -908,7 +900,7 @@
   
 
 ;true-value?: determina si un valor dado corresponde a un valor booleano falso o verdadero
-;(define true-value?
+;(define true-value?a
 ;  (lambda (x)
 ;    (not (zero? x))))
  
@@ -1276,4 +1268,3 @@
 ;(update-store (create-var (length(vector-ref init-store 0)) miRegistro))
 ;init-store
 ;(asignar-pos-en-store '(1 2 3))
-
